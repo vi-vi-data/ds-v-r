@@ -1,0 +1,2322 @@
+---
+title: "Data Science v R — Prednáška 1 (pracovný zošit)"
+subtitle: "Úvod do Data Science, R, RStudio + Git a verzovanie kódu (GitHub a renv ako bonus)"
+format:
+  html:
+    self-contained: true
+    number-sections: true
+    number-depth: 2
+    code-fold: show
+    code-summary: "Kód"
+    code-tools: true
+    toc: true
+    toc-expand: true
+    theme: cosmo
+execute:
+  eval: true
+  error: true
+  echo: true
+  message: false
+  warning: false
+  cache: false
+editor: visual
+---
+
+::: {.callout-note title="Ako pracovať s materiálmi k prednáške"}
+- K prednáške dostávate **dva súbory s rovnakým obsahom**:
+  - `L01_prednaska.html` — **na čítanie** v prehliadači. Miesta `___` sú prázdne; výsledky sú zobrazené len pri ukážkach, ktoré sa dajú spustiť bez dopĺňania (napr. graf).
+  - `L01_prednaska_zosit.qmd` — **pracovný zošit**. Otvoríte ho v RStudiu (otvorí sa vo Visual editore) a kód dopĺňate a spúšťate **priamo v ňom** — nepotrebujete samostatný R skript.
+- Zošit si pred prvým použitím **uložte pod vlastným menom** (napr. `L01_zosit_priezvisko.qmd`) do toho istého priečinka ako `images/` a dáta.
+- Miesta **`___`** nahradíte správnym kódom (počas prednášky alebo v blokoch ÚLOHA). Komentár za `___` je nápoveda, čo tam patrí. Kým `___` nedoplníte, blok skončí chybou — to je v poriadku.
+- **Spúšťanie v zošite:** `Ctrl+Enter` = aktuálny riadok, `Ctrl+Shift+Enter` = celý blok (alebo zelená šípka ▶ vpravo hore v bloku). Výsledok sa zobrazí priamo pod blokom. Bloky spúšťajte **postupne zhora nadol** — neskoršie bloky používajú objekty z predchádzajúcich.
+- Vlastný blok kódu vložíte `Ctrl+Alt+I`; vlastné poznámky píšte do rámčekov **Moje poznámky** na konci každého bloku v zošite (alebo kdekoľvek do textu).
+- **Render zošita** (`Ctrl+Shift+K`) vytvorí vaše vlastné HTML s doplneným kódom aj výsledkami. Bloky s inštaláciou balíkov, príkazmi Gitu a `setwd()` sa pri renderi nespúšťajú — tie spúšťate ručne podľa textu.
+- Bloky **KONTROLA** sú otázky bez kódu: odpovedzte si **skôr**, než spustíte kód — až potom si odpoveď overte.
+- **Bonus na konci dokumentu** (ak ho prednáška má) sa neprednáša ani neskúša — je pre záujemcov.
+:::
+
+# Základné informácie {.unnumbered}
+
+- doc. Ing. Brian König, PhD.
+- Email: konigbrian\@gmail.com; brian.konig\@euba.sk
+- Konzultačné hodiny — streda: 13:00 – 15:00
+- Body:
+  - 40 bodov projekt (prezentácia 11-13 týždeň; odovzdanie cez **Turnitin a MS Teams**);
+  - 60 bodov skúška.
+
+# Literatúra {.unnumbered}
+
+- An introduction to R: <https://cran.r-project.org/doc/manuals/R-intro.pdf>
+- R for data science (2e): <https://r4ds.hadley.nz/>
+- ggplot2: Elegant Graphics for Data Analysis: <https://ggplot2-book.org/index.html>
+- Tidy Modeling with R: <https://www.tmwr.org/>
+- Pro Git (voľne dostupná kniha o Gite): <https://git-scm.com/book/en/v2>
+- Happy Git and GitHub for the useR (k bonusu): <https://happygitwithr.com/>
+- renv — Introduction (k bonusu): <https://rstudio.github.io/renv/articles/renv.html>
+
+# Mapa dnešnej prednášky {.unnumbered}
+
+| Blok | Téma | Čo si odnesiete |
+|----|----|----|
+| 1 | Prečo Data Science? (mini-case kuriéri) | Motivácia + data science lifecycle |
+| 2 | R a RStudio, balíky, prvý kód | Orientácia v prostredí, `install.packages()` vs. `library()`, priradenie |
+| 3 | Objekty: triedy a vektory | Vytvoriť, skonvertovať a použiť vektor; MAE a RMSE na reálnom prípade |
+| 4 | Logické a množinové operácie | Filtrovanie, prieniky, `%in%` (case: CBAM) |
+| 5 | Matice | `matrix()`, `%*%`, `solve()`, odhad OLS — most k ekonometrii |
+| 6 | Data frames a podmnožiny | `[`, `[[`, `$`, ošetrenie NA (case: recesia 1958) |
+| 7 | Zoraďovanie a poradie | `sort`, `order`, `which.min/max`, `rank` |
+| 8 | Git: verzovanie na vlastnom PC | RStudio Project namiesto `setwd()`, lokálny repozitár, commit, história, návrat k staršej verzii, `.gitignore` |
+| — | Exit ticket | Kontrola pochopenia |
+| Bonus | GitHub a `renv` (nad rámec hodiny) | Vzdialený repozitár, push/pull, `renv.lock` — na samoštúdium |
+
+Čísla blokov zodpovedajú číslam kapitol v obsahu.
+
+::: {.callout-note title="CIEĽ dnešnej prednášky"}
+Po dnešku viete:
+
+(1) opísať kroky data science projektu,
+
+(2) vytvoriť a filtrovať základné objekty v R,
+
+\(3\) založiť lokálny Git repozitár a urobiť commit,
+
+\(4\) prezrieť históriu zmien a vrátiť súbor k staršej verzii. Všetko ostatné je bonus.
+:::
+
+# Blok 1 — Prečo Data Science? (mini-case)
+
+::: {.callout-note title="CIEĽ bloku"}
+Vedieť vlastnými slovami opísať, čo data science je, pomenovať šesť krokov data science projektu a povedať, ktorý z nich v praxi zaberie najviac času.
+:::
+
+::: {.callout-tip title="MINI-CASE — otváracia otázka"}
+Prevádzkujete rozvoz jedla. Máte predaje za posledných 7 dní a dve rôzne predpovede dopytu od dvoch analytikov. **Otázky do pléna:** Podľa čoho rozhodnete, ktorý analytik predpovedá lepšie? Koľko kuriérov objednáte na budúci týždeň? — Presne toto dnes na konci bloku o vektoroch vypočítame. Data science = odpovede na takéto otázky pomocou dát.
+:::
+
+## Čo je Data Science
+
+- Data science je vedná disciplína, ktorá nám umožňuje transformovať nespracované údaje do zmysluplných poznatkov.
+- Kombinuje vedomosti z matematiky, štatistiky, programovania, umelej inteligencie, strojového učenia a ďalších vedných disciplín za účelom získania poznatkov skrytých v údajoch.
+
+![Schéma prieniku matematiky/štatistiky, programovania a domény — data science ako ich priesečník](lecture1_images/clipboard-2511714289.png){width="300"}
+
+- Zdroj: <https://towardsdatascience.com/introduction-to-statistics-e9d72d818745>
+
+- Google trends — vyhľadávanie „Data Scientist":
+
+![Google Trends: vývoj záujmu o výraz „Data Scientist“ v čase](lecture1_images/clipboard-1312803295.png)
+
+- Data Science má veľmi široké využitie (obchod, informatika, biológia, zdravotníctvo, robotika a mnohé iné).
+- Rozmach dátovej vedy nastal vďaka viacerým faktorom:
+  - generovanie veľkého objemu dát, ktoré sú k dispozícii,
+  - ľahká dostupnosť výpočtového výkonu (napr. Amazon Web Services, Google Cloud a iné),
+  - nové programovacie nástroje ako Python, R a iné, ktoré umožňujú rýchlu a efektívnu analýzu dát,
+  - výsledkom je vysoký dopyt po dátových vedcoch, čo zároveň zvyšuje ich mzdy.
+- Čo robia dátoví vedci (data scientists)?
+
+![Prieskum Forbes: rozdelenie času dátového vedca — najväčší podiel pripadá na čistenie a prípravu dát (\~60–80 %), modelovanie tvorí podstatne menšiu časť](lecture1_images/clipboard-3952056859.png)
+
+Zdroj: Gil Press, "Cleaning Big Data: Most Time-Consuming, Least Enjoyable Data Science Task, Survey Says", Forbes, 2016.
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Podľa grafu vyššie: na čom trávi dátový vedec **najviac** času? Je to modelovanie?
+:::
+
+```{r}
+```
+
+```{r}
+2+2
+
+```
+
+## Data science lifecycle — o čom bude tento predme t
+
+- Model data science krokov projektu:
+  - Najprv je potrebné **importovať** dáta do R (zo súboru, databázy alebo API).
+  - **Upratanie** dát znamená ich uloženie do konzistentnej formy: každý stĺpec je premenná, každý riadok jedno pozorovanie.
+  - **Transformácia**: výber zaujímavých pozorovaní (napr. jedno mesto, posledný rok), tvorba nových premenných (napr. rýchlosť z dráhy a času) a súhrnné štatistiky (počet, priemer).
+  - Dobrá **vizualizácia** odhalí neočakávané vzory alebo vyvolá nové otázky o dátach.
+  - **Modely** dopĺňajú vizualizácie — keď sú otázky presne formulované, modely ich zodpovedajú matematickými a výpočtovými metódami.
+  - Posledný krok je **komunikácia** — aj najlepšie modely a vizualizácie sú zbytočné, ak výsledky nedokážeme zrozumiteľne odovzdať ostatným.
+- Všetky kroky spája programovanie. Netreba byť odborný programátor, no lepšie programátorské zručnosti umožňujú automatizovať úlohy a riešiť problémy efektívnejšie.
+- **Novinka v kurze:** prierezová zručnosť bežne vyžadovaná v praxi — **verzovanie kódu (Git)** — sa zavádza hneď dnes a používa sa celý semester. Nadstavby (GitHub, reprodukovateľnosť prostredia cez `renv`) sú v bonuse na konci dokumentu pre záujemcov.
+
+![Data science lifecycle: import → upratanie → transformácia → vizualizácia/modely → komunikácia, všetko spojené programovaním](lecture1_images/clipboard-1210768900.png)
+
+Zdroj: <https://r4ds.hadley.nz/intro>
+
+- Zbierka knižníc pre data science v R = tidyverse (od týždňa 3).
+
+::: {.callout-note title="ZHRNUTIE BLOKU 1"}
+- **Data science** = premena nespracovaných údajov na poznatky, ktoré podopierajú rozhodnutie; stojí na troch nohách — matematika a štatistika, programovanie a znalosť domény.
+- Projekt má šesť krokov: **import → upratanie → transformácia → vizualizácia → modely → komunikácia**. Programovanie ich spája, verzovanie kódu (Git) ich drží pohromade v čase.
+- Najviac času zaberá **príprava a čistenie dát**, nie modelovanie — preto na ne pripadá najviac týždňov kurzu.
+- Vecná pointa: otázka „ktorý analytik predpovedá lepšie?" nie je otázka na názor, ale na **metriku** — presne to počítame v bloku 3.
+:::
+
+::: {.callout-tip title="Moje poznámky"}
+*(sem si píšte vlastné poznámky, otázky a postrehy)*
+:::
+
+# Blok 2 — R a RStudio: prvý kontakt
+
+::: {.callout-note title="CIEĽ bloku"}
+Zorientovať sa v RStudiu, vedieť spustiť kód, nainštalovať a načítať balík, nájsť pomoc a priradiť hodnotu do vecne pomenovanej premennej.
+:::
+
+Blok je postup v siedmich krokoch — od toho, čo je R, po prvý výpočet. Každý krok má jeden cieľ; funkcie sa najprv opíšu a až potom použijú.
+
+## Krok 1 — Čo je R
+
+- R je voľne dostupný softvér (open source) pre spracovanie dát, štatistické výpočty a vizualizáciu; podporuje Windows, macOS aj Linux.
+- Založený na jazyku S (John Chambers, Bell Laboratories); veľa S kódu funguje bez úpravy aj v R.
+- R project vznikol v roku 1992, prvá stabilná verzia v roku 2000 (University of Auckland); aktuálna verzia je zo série R 4.6.x (R 4.6.0 vyšlo 24. 4. 2026, R 4.6.1 dňa 24. 6. 2026).
+- R patrí medzi najpoužívanejšie jazyky pre štatistiku a dátovú analýzu; používa sa na svetových univerzitách (MIT, Harvard, Oxford, Cambridge, Stanford) aj v praxi (dátoví analytici, štatistici, dátoví architekti).
+- Kľúčové informácie: <https://www.r-project.org/>
+- Balíky (packages) sa distribuujú cez **CRAN** (Comprehensive R Archive Network — centrálny archív balíkov a dokumentácie R; <https://cran.r-project.org/>), ďalšie cez **GitHub**.
+- **IDE** (Integrated Development Environment — integrované vývojové prostredie; editor, konzola, správa súborov a grafov v jednom okne): **RStudio** (<https://posit.co/download/rstudio-desktop/>); v praxi aj **Positron** či **VS Code + R rozšírenie**.
+
+## Krok 2 — RStudio: štyri panely
+
+- Hlavné okno = menu + štyri panely:
+  - Panel 1 (vľavo hore) — editor kódu a prezeranie dát (Files and Data),
+  - Panel 2 (vpravo hore) — Environment (vytvorené objekty) a History (história príkazov), import dát,
+  - Panel 3 (vpravo dole) — Files, Plots, Packages, Help,
+  - Panel 4 (vľavo dole) — Console (vykonanie kódu).
+- Rozloženie panelov možno zmeniť cez hlavné menu.
+
+## Krok 3 — Skript
+
+- Sekvencie príkazov píšeme do **skriptu**, nie do konzoly: skript sa dá uložiť, spustiť znova a poslať kolegovi. Nový skript: *ctrl+shift+n*, alebo zelené + vľavo hore → R Script.
+
+  ![Tlačidlo na vytvorenie nového R skriptu v RStudiu](lecture1_images/clipboard-2684772551.png){width="147"}
+
+- Celý skript spustíme cez *ctrl+r*; vybrané riadky vysvietime a spustíme *ctrl+enter*.
+
+  ![Skript v editore — označené riadky sa spustia tlačidlom Run (Ctrl+Enter)](lecture1_images/clipboard-3509684192.png){width="189"}
+
+- Zmena klávesovej skratky: **Tools → Modify Keyboard Shortcuts**.
+
+- Uloženie skriptu: modrá disketa „save current document" alebo *ctrl+s*. Skript sa ukladá s príponou `.R`.
+
+- Komentár sa píše za znak `#` — všetko napravo od mriežky R nevykoná. Komentár má hovoriť **prečo** riadok existuje, nie opakovať, čo robí.
+
+## Krok 4 — Balíky: `install.packages()` vs. `library()`
+
+::: {.callout-tip title="MINI-CASE — otváracia otázka"}
+Kolega vám pošle skript, ktorý mu funguje. U vás hneď prvý riadok spadne na *there is no package called 'dplyr'*. Čo chýba — a prečo to nestačí spraviť raz a navždy?
+:::
+
+**Základné R** obsahuje len jadro funkcií. Všetko ostatné (tidyverse, ggplot2, glmnet…) sú **balíky (packages)** — kolekcie funkcií, dát a dokumentácie. Práca s balíkom má **dva rôzne kroky**, ktoré si začiatočníci pravidelne zamieňajú. Analógia: `install.packages()` = kúpiť knihu do knižnice; `library()` = vybrať ju z police na stôl.
+
+**Funkcia 1 — `install.packages("nazov")`** stiahne balík z CRAN a nainštaluje ho **na disk**. Robí sa **raz** (znova až pri novej verzii R alebo pri aktualizácii balíka). Názov je **v úvodzovkách**, lebo v čase volania ešte žiadny objekt s takým menom neexistuje. Príkaz potrebuje internet, preto ho v tomto dokumente nespúšťame.
+
+```{r}
+#| label: baliky-instalacia
+#| eval: false
+install.packages("dplyr")   # RAZ — sťahuje z CRAN, vyžaduje internet
+```
+
+**Funkcia 2 — `library(nazov)`** **načíta** už nainštalovaný balík do aktuálnej relácie. Robí sa **v každej novej relácii R**, teda aj po každom reštarte RStudia. Úvodzovky tu netreba (`library("dplyr")` však tiež funguje). Balíky sa načítavajú na začiatku skriptu, aby bolo hneď vidieť, čo skript potrebuje.
+
+```{r}
+#| label: load-packages
+#| eval: true
+# Balíky použité v tejto prednáške — pre vás nové, inštalujú sa raz (viď chunk vyššie).
+# Zvyšok prednášky je čisté base R; tieto dva potrebujeme len na jednu ukážku v bloku 4.
+library(dplyr)              # V KAŽDEJ RELÁCII — sprístupní funkcie balíka
+library(tibble)             # moderná podoba data frame
+```
+
+**Ďalšie funkcie na prácu s balíkmi:**
+
+- `balik::funkcia` — dvojitá dvojbodka `::` sprístupní **jednu** funkciu bez načítania celého balíka. Používa sa aj vtedy, keď by `library()` spôsobil konflikt názvov (napr. `stats::filter` vs. `dplyr::filter`).
+- `installed.packages()` — vráti **maticu** nainštalovaných balíkov; `[, 1]` z nej vyberie prvý stĺpec, teda názvy.
+- `packageVersion("nazov")` — verzia konkrétneho balíka (dôležité, keď kolegovi kód beží inak než vám).
+- `update.packages()` — aktualizuje nainštalované balíky.
+
+```{r}
+#| label: baliky-dalsie-funkcie
+#| eval: false
+dplyr::filter               # prístup BEZ načítania: balik::funkcia
+installed.packages()[, 1]   # zoznam nainštalovaných balíkov
+packageVersion("dplyr")     # verzia konkrétneho balíka
+update.packages()           # aktualizácia nainštalovaných balíkov
+```
+
+::: {.callout-warning title="POZOR — načítanie balíka prekryje (maskuje) funkcie"}
+Po `library(dplyr)` vypíše R hlásenie *The following objects are masked from 'package:stats' / 'package:base'*. Znamená to, že balík priniesol funkcie s **rovnakým názvom**, aké už v R existujú (`filter()`, `lag()`, ale aj množinové `union()`, `intersect()`, `setdiff()`), a od tej chvíle sa volajú tie z balíka. Nie je to chyba, ale treba o tom vedieť: keď potrebujete pôvodnú verziu, vypýtate si ju menom balíka — `stats::filter()`, `base::intersect()`. Poradie načítania balíkov teda mení správanie kódu; preto sa v produkčných skriptoch používa buď zápis `balik::funkcia()`, alebo balík `conflicted`, ktorý pri každom konflikte vypýta rozhodnutie.
+:::
+
+::: {.callout-warning title="POZOR — tri najčastejšie chyby"}
+1.  *there is no package called 'X'* → balík **nie je nainštalovaný** → `install.packages("X")`.
+2.  *could not find function "filter"* → balík je nainštalovaný, ale **nie je načítaný** → `library(X)`.
+3.  `install.packages()` v skripte, ktorý odovzdávate → skript sa pri každom spustení pokúša inštalovať. Inštalačné príkazy patria do konzoly alebo do neevaluovaného chunku, nie do odovzdávaného kódu.
+:::
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Reštartovali ste RStudio a `mutate()` prestal fungovať. Treba znova `install.packages("dplyr")`?
+:::
+
+::: {.callout-note title="PRAX"}
+Presne toto rieši balík `renv` (viď **Bonus** na konci dokumentu): uzamkne, **ktoré balíky a v akých verziách** projekt potrebuje, aby si ich ktokoľvek vedel doinštalovať jedným príkazom.
+:::
+
+## Krok 5 — Pomoc
+
+**Funkcie:**
+
+- `help(sqrt)` alebo skrátene `?sqrt` (aj kláves F1 nad názvom funkcie) — otvorí dokumentáciu funkcie v paneli Help: čo robí, aké má argumenty, príklady na konci stránky.
+- `help.search("matrix")` alebo skrátene `??matrix` — hľadá text vo všetkých dokumentáciách; použijete ho, keď **nepoznáte presný názov** funkcie.
+- `help.start()` — otvorí úvodnú stránku dokumentácie (manuály, FAQ).
+
+```{r}
+#| label: help-funkcie
+#| eval: false
+help(sqrt)              # nápoveda k funkcii
+?sqrt                   # to isté, skrátene
+help.search("matrix")   # hľadanie, keď nepoznáme presný názov
+??matrix                # to isté, skrátene
+help.start()            # úvodná stránka dokumentácie
+```
+
+- R je **case-sensitive** (rozlišuje veľké a malé písmená): `?Sqrt` → *No documentation for 'Sqrt'*.
+- Online: <https://stackoverflow.com/>, <https://forum.posit.co/>, jazykové modely (ChatGPT, Gemini, Claude). Odpoveď z jazykového modelu vždy spustite a overte — model si vie vymyslieť aj neexistujúci argument.
+
+::: {.callout-warning title="POZOR — častá chyba"}
+`Mean(x)`, `SUM(x)`, `Sqrt(9)` — nič z toho nefunguje. R rozlišuje veľké a malé písmená. Ak vidíte *could not find function*, skontrolujte najprv preklepy a veľkosť písmen.
+:::
+
+## Krok 6 — Priradenie hodnoty a pomenúvanie objektov
+
+**Ako pomenúvať objekty** — pravidlá, ktoré platia v celom kurze (a ktoré dodržiava aj tento dokument):
+
+- Názov musí začínať **písmenom**, ďalej smie obsahovať písmená, číslice, bodku a podčiarkovník. `2sklad` ani `mzda-2026` teda nie sú platné názvy; `sklad2` a `mzda_2026` áno.
+- R rozlišuje veľké a malé písmená: `Trzby` a `trzby` sú dva rôzne objekty.
+- Konvencia kurzu je **snake_case** — malé písmená, slová oddelené podčiarkovníkom (`priemerna_mzda`, `pocet_kurierov`). Používa ju `tidyverse` aj väčšina súčasných R projektov.
+- Názov má povedať, **čo v objekte je**: `x1` vám o mesiac nepovie nič, `predaj_dni` áno.
+- Objekt **neprepisujeme obsahom iného druhu** — keď `predaj` raz obsahuje predaje, nemá o dva riadky nižšie obsahovať text.
+- Nepoužívajte názvy vstavaných funkcií (`c`, `t`, `df`, `mean`, `sum`, `data`, `rank`) — podrobne v bloku 4.
+- Jediná výnimka v tomto dokumente sú **matematické zápisy**, kde sa názov drží vzorca (`X`, `y` pri odhade OLS v bloku 5) — tam je to na mieste vždy povedané.
+
+**Funkcie a operátory v tomto kroku:**
+
+- `<-` — **priradenie**: hodnotu vpravo uloží pod meno vľavo. Objekt sa objaví v paneli Environment. (Funguje aj `=`, ale v kurze píšeme `<-`; klávesová skratka *Alt + -*.)
+- Napísaním mena objektu (alebo `print(meno)`) sa jeho obsah vypíše.
+- `c(...)` — spojí hodnoty do **vektora** (podrobne v bloku 3); `sum()` ich sčíta, `mean()` vráti priemer.
+- `ls()` — vypíše mená všetkých objektov v prostredí.
+
+::: {.callout-tip title="ÚLOHA — live coding (študenti píšu s vyučujúcim)"}
+Vyučujúci píše kód na plátno riadok po riadku, študenti píšu s ním do vlastného skriptu. Po každom riadku sa pýtajte: **čo pribudlo v paneli Environment?** Práve tam vidíte, že priradenie vytvorilo objekt — a s akou hodnotou a triedou.
+:::
+
+```{r}
+#| label: priradenie-hodnoty
+cena_kus <- 5                          # cena jedného kusu v eurách
+cena_kus                               # zobrazenie obsahu
+print(cena_kus)                        # to isté, explicitne
+
+predajna <-"Bratislava"                        # text musí byť v úvodzovkách
+predaj_dni <- c(12, 15,9, 20,24)                       # predané kusy za 5 dní
+
+kusy_spolu <- sum(predaj_dni)                       # koľko kusov sme predali spolu
+trzba <- kusy_spolu * cena_kus; trzba  # tržba v eurách a jej zobrazenie
+mean(predaj_dni)                                   # priemerný denný predaj
+ls()                                   # zoznam doposiaľ vytvorených objektov
+```
+
+- Ak R po spustení vypíše „**+**", očakáva ďalší vstup — niečo v kóde chýba (napr. `chyba <- "pokus` bez koncovej úvodzovky).
+- Oddeľovač desatinných miest je bodka „.".
+
+**Upratovanie prostredia — funkcia `rm()`:** `rm(meno)` odstráni jeden objekt, `rm(list = ls())` všetky naraz (argument `list` očakáva vektor mien, ktorý mu dodá `ls()`). Celé prostredie sa čistí pred kontrolou, či skript beží aj bez objektov, ktoré ste si vytvorili ručne v konzole.
+
+```{r}
+#| label: prostredie-ls-rm
+#| eval: false
+ls()               # čo je aktuálne v pamäti (panel Environment)
+rm(predajna)       # odstránenie jedného objektu
+rm(list = ls())    # vyčistenie celého prostredia — pred „čistým" spustením skriptu
+```
+
+`rm(list = ls())` **v odovzdávanom skripte nechávajte len vedome** — vymaže aj to, čo si v prostredí drží niekto iný.
+
+## Krok 7 — R ako kalkulačka
+
+**Operátory a funkcie:** `+`, `-`, `*`, `/` (základné operácie), `^` (mocnina), `sqrt()` (druhá odmocnina). Vyššia odmocnina sa píše ako mocnina so zlomkom: tretia odmocnina z 27 je `27^(1/3)`. Výsledky sú zrejmé, preto ich v tomto dokumente nevypisujeme — očakávaná hodnota je v komentári.
+
+```{r}
+#| label: r-ako-kalkulacka
+#| results: hide
+#| eval: true
+5 + 3        # súčet               -> 8
+5 - 3        # rozdiel             -> 2
+5 * 3        # súčin               -> 15
+9 / 3        # podiel              -> 3
+5^2          # mocnina             -> 25
+sqrt(9)      # druhá odmocnina     -> 3
+27^(1/3)     # tretia odmocnina    -> 3
+```
+
+Prehľad ďalších matematických funkcií (`abs()`, `exp()`, `log()`, `round()`…):
+
+![Prehľadová tabuľka základných matematických funkcií v R](lecture1_images/clipboard-3663385439.png){width="481"}
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Čo vráti `27^(1/3)`? A čo vráti `sqrt(-1)`?
+
+Odpoved:sqrt(-1) 27\^(1/3)
+:::
+
+::: {.callout-note title="ZHRNUTIE BLOKU 2"}
+- `install.packages("balik")` sa robí **raz** (sťahuje z CRAN na disk), `library(balik)` **v každej relácii** (načíta do pamäte). Zámena týchto dvoch krokov je najčastejšia chyba začiatočníka.
+- Zápis `balik::funkcia()` sprístupní jednu funkciu bez načítania celého balíka — a je to aj obrana proti maskovaniu názvov.
+- Pomoc hľadáme `?funkcia` alebo `help.search("text")`; R je case-sensitive, takže `Mean()` neexistuje.
+- Priradenie `<-` vytvorí objekt; `ls()` ukáže, čo je v prostredí, `rm()` to odstráni. Názvy píšeme v snake_case, hovoria, čo v objekte je, a nikdy nepomenúvame objekt menom vstavanej funkcie.
+- Vecná pointa: reprodukovateľnosť sa začína tým, že skript obsahuje `library()`, ale **nie** `install.packages()` — inak sa pri každom spustení pokúša inštalovať.
+:::
+
+::: {.callout-tip title="Moje poznámky"}
+*(sem si píšte vlastné poznámky, otázky a postrehy)*
+:::
+
+# Blok 3 — Objekty v R: triedy a vektory
+
+::: {.callout-note title="CIEĽ bloku"}
+Vedieť vytvoriť vektor, zistiť a zmeniť jeho triedu, vytvoriť sekvenciu a použiť vektorové operácie na reálny výpočet (case kuriéri).
+:::
+
+## Triedy objektov
+
+- R pozná 5 základných tried hodnôt:
+
+1.  Textové (character): `"a"`, `"Bratislava"`...
+2.  Číselné — reálne čísla (numeric): 1.5; -3.4; 2.15...
+3.  Celé čísla (integer): 1, 2, 3...
+4.  Komplexné čísla (complex): 2+3i
+5.  Logické hodnoty (logical): `TRUE` / `FALSE`
+
+- Trieda sa overuje funkciou `class()`.
+- Špeciálne hodnoty:
+  - nekonečno (**Inf**) — napr. `1/0` = Inf; možno použiť aj vo výpočte: `1/Inf` = 0,
+  - nedefinovaná hodnota (**NaN** — not a number) — napr. `0/0`,
+  - chýbajúca hodnota (**NA**).
+- Help k špeciálnym znakom sa píše v úvodzovkách: `?'<-'`
+
+## Prehľad základných objektov
+
+Z hodnôt jednotlivých tried sa skladajú **objekty**. Prejdeme sedem najčastejších — pri každom najprv funkciu, ktorá ho vytvára, potom kód. Na konci sekcie je prehľad v tabuľke.
+
+**1) Vektor — `c(...)`** spojí hodnoty **jednej triedy** do vektora. `length()` vráti počet prvkov, `mean()` priemer.
+
+```{r}
+#| label: objekt-vektor
+ceny <- c(10, 20, 30)
+class(ceny); length(ceny); mean(ceny)
+```
+
+**2) Faktor — `factor(x, levels, labels)`** uloží **kvalitatívnu** premennú (kategórie). Bez ďalších argumentov R zoradí kategórie abecedne. Argument `levels` určuje **poradie** kategórií (rozhoduje o poradí v tabuľkách a na osi grafu), `labels` ich **premenuje** na zrozumiteľné názvy. `levels()` vypíše kategórie, `table()` spočíta, koľkokrát sa každá vyskytla.
+
+```{r}
+#| label: objekt-faktor
+pohlavie <- factor(c("M", "F", "F", "M", "F"))
+levels(pohlavie)                         # abecedne: "F" pred "M"
+pohlavie <- factor(c("M", "F", "F", "M", "F"),
+                  levels=c("M","F"), labels=c('muz', 'zena' ) )                # argumenty levels a labels
+table(pohlavie)                          # početnosti v zvolenom poradí
+```
+
+**3) Zoznam — `list(meno = hodnota, ...)`** drží prvky **rôznych tried** aj rôznej dĺžky. Komponent zoznamu vyberieme podľa mena cez `$`.
+
+```{r}
+#| label: objekt-zoznam
+osoba <- list(meno="Anna", vek='22', znamky=c(3,2,1))
+class(osoba); osoba$meno; mean(osoba$znamky)
+```
+
+**4) Pole — `array(hodnoty, dim)`** je viacrozmerná tabuľka. `dim` hovorí, koľko je riadkov, stĺpcov a vrstiev; súčin rozmerov (tu `2*3*2 = 12`) sa **musí** rovnať počtu hodnôt. Výber `[1, , 1]` znamená: prvý riadok, všetky stĺpce, prvá vrstva (prázdne miesto = „ber všetko").
+
+```{r}
+#| label: objekt-pole
+#| eval: true
+# tržby: 2 predajne x 3 mesiace x 2 roky
+trzby_pole <- array(1:12, dim = c(2, 3, 2))
+dim(trzby_pole); trzby_pole[1, , 1]     # predajňa 1, všetky mesiace, rok 1
+```
+
+**5) Matica — `matrix(hodnoty, nrow, ncol)`** je dvojrozmerné pole: vektor s atribútom `dim`. `t()` ju transponuje (riadky ↔ stĺpce). Podrobne v bloku 5.
+
+```{r}
+#| label: objekt-matica
+predaj_mat <- matrix(1:6, nrow=2, ncol=3  )  #щось там by sort between nrow and ncol&&&
+class(predaj_mat); dim(predaj_mat); t(predaj_mat)
+```
+
+**6) Časový rad — `ts(hodnoty, start, frequency)`** pripojí k hodnotám kalendár. `frequency = 12` znamená **mesačné** dáta (4 = štvrťročné, 1 = ročné), `start = c(2024, 1)` je január 2024. `start()` a `end()` vrátia prvé a posledné obdobie.
+
+```{r}
+#| label: objekt-casovy-rad
+#| eval: true
+predaj_mesacne <- ts(c(100, 102, 105, 103, 107, 110), start = c(2024, 1), frequency = 12)
+start(predaj_mesacne); end(predaj_mesacne); predaj_mesacne      # šesť hodnôt = január až jún 2024
+```
+
+**7) Data frame — `data.frame(stlpec = hodnoty, ...)`** je tabuľka: každý stĺpec môže mať inú triedu, všetky majú rovnakú dĺžku. `nrow()` vráti počet riadkov; `tabulka[podmienka, ]` vyberie riadky, ktoré spĺňajú podmienku. Podrobne v bloku 6.
+
+```{r}
+#| label: objekt-data-frame
+dochadzka <- data.frame(id = 1:3, pritomny = c(TRUE, FALSE, TRUE))
+___                                     # počet riadkov; len prítomní
+```
+
+| Objekt     | Vytvára ho     | Triedy prvkov     | Rozmery        |
+|------------|----------------|-------------------|----------------|
+| vektor     | `c()`          | jedna             | 1              |
+| faktor     | `factor()`     | kategórie         | 1              |
+| zoznam     | `list()`       | ľubovoľné         | 1 (komponenty) |
+| matica     | `matrix()`     | jedna             | 2              |
+| pole       | `array()`      | jedna             | ľubovoľne veľa |
+| časový rad | `ts()`         | číselná           | 1 + kalendár   |
+| data frame | `data.frame()` | po stĺpcoch rôzne | 2              |
+
+Každý objekt môže mať aj **atribúty** — mená (`names`, `dimnames`), rozmery, triedu; vypíše ich `attributes()`.
+
+## Ako sa pozrieť na neznámy objekt
+
+Tri príkazy, ktorými sa začína **každá** práca s novými dátami — skôr než napíšete prvú analýzu. Ukážeme ich na zabudovanej tabuľke `airquality` (denné merania kvality ovzdušia v New Yorku, máj–september 1973).
+
+**Funkcia 1 — `str(x)`** (*structure*) vypíše **štruktúru** objektu: triedu, rozmery a prvé hodnoty, jeden riadok na komponent alebo stĺpec. Je to najrýchlejšia odpoveď na otázku „čo to vlastne mám?" — pri tabuľke ukáže počet pozorovaní, počet premenných a triedu každého stĺpca, teda presne to, čo rozhoduje o tom, či váš ďalší príkaz zbehne.
+
+```{r}
+#| label: inspekcia-str
+str(osoba)              # zoznam: 3 komponenty a ich triedy
+___                                     # tabuľka: 153 riadkov, 6 stĺpcov
+```
+
+**Funkcia 2 — `head(x, n)`** vypíše prvých `n` riadkov (predvolene 6), `tail(x, n)` posledných. Explicitné `n` sa píše vtedy, keď chcete výpis udržať krátky. Veľkú tabuľku **nikdy nevypisujeme celú** — `head()` stačí na kontrolu, že dáta vyzerajú tak, ako čakáme.
+
+```{r}
+#| label: inspekcia-head
+___                                     # prvé 3 riadky
+```
+
+**Funkcia 3 — `summary(x)`** dá pre číselný stĺpec minimum, kvartily, priemer a maximum a — dôležité — riadok `NA's` s počtom chýbajúcich hodnôt. Chýbajúce hodnoty sa tak odhalia hneď na začiatku, nie až keď priemer vyjde `NA`.
+
+```{r}
+#| label: inspekcia-summary
+___                                     # číselný súhrn stĺpcov + počet NA
+```
+
+Vo výstupe si všimnite riadok `NA's` pri stĺpcoch `Ozone` a `Solar.R` — k chýbajúcim hodnotám sa vrátime v bloku 6.
+
+## Vektory — tvorba
+
+**Funkcia `c(...)`** spája hodnoty do vektora; trieda vektora vyplýva z hodnôt, ktoré doň vložíte. Operátor `a:b` vytvorí postupnosť celých čísel od `a` po `b`.
+
+```{r}
+#| label: vektory-tvorba
+#| eval: true
+ceny_eur  <- c(5.5, 2.5)               # číselný (numeric)
+na_sklade <- c(TRUE, FALSE)            # logický (logical)
+kody      <- c("A", "B", "C", "D")     # textový (character)
+dni       <- 1:10                      # celočíselný (integer)
+class(ceny_eur); class(na_sklade); class(kody); class(dni)
+```
+
+**Funkcia `vector(mode, length)`** vytvorí vektor **danej triedy a dĺžky** naplnený neutrálnou hodnotou: `0` pri `"numeric"`, `FALSE` pri `"logical"`, `""` pri `"character"`. Používa sa vtedy, keď dopredu viete, koľko hodnôt budete zapisovať — pripravené miesto je rýchlejšie než postupné predlžovanie vektora cez `c()`.
+
+```{r}
+#| label: vektory-tvorba-2
+#| eval: true
+denne_trzby <- vector("numeric", length = 5); denne_trzby
+```
+
+::: {.callout-warning title="POZOR — častá chyba"}
+`c(true, false)` → *Error: object 'true' not found*. Logické hodnoty píšeme **veľkými písmenami**: `TRUE` / `FALSE`. Text musí byť v úvodzovkách: `c("true","false")`.
+
+Skratky `T` a `F` fungujú, ale **nepoužívajte ich**: sú to obyčajné premenné, ktoré sa dajú prepísať. Po `T <- 0` bude `c(T, TRUE)` vektor `0 1` a kód začne ticho počítať nezmysly, kým `TRUE` prepísať nemožno (je to rezervované slovo). V odovzdávanom kóde píšte vždy `TRUE`/`FALSE`.
+:::
+
+## Vektory — vynútenie triedy (coercion)
+
+- Vektor drží hodnoty **jednej** triedy. Keď do `c()` vložíte viac tried, R ich ticho zjednotí — tomu sa hovorí **vynútenie triedy (coercion)**. Nie je to chyba a R na to neupozorní.
+- Smer je vždy od najmenej k najviac všeobecnej triede — každá ďalšia dokáže pojať obsah predchádzajúcej:
+
+$$\text{logical} \;\rightarrow\; \text{integer} \;\rightarrow\; \text{numeric} \;\rightarrow\; \text{character}$$
+
+- Číslo sa dá zapísať ako text (`2` → `"2"`), text ako číslo spravidla nie — preto v zmiešanom vektore vyhrá vždy `character`. `TRUE` sa vo výpočte správa ako 1, `FALSE` ako 0, takže `sum(c(TRUE, TRUE, FALSE))` je 2 (a takto sa v praxi počítajú splnené podmienky).
+
+Predpovedajte triedu každého vektora **skôr**, než spustíte kód:
+
+```{r}
+#| label: vektory-vynutenie-triedy
+zmes_text_cislo  <- c("ahoj", 2)
+zmes_logika_cislo <- c(TRUE, 2)
+zmes_logika_text <- c(TRUE, "ahoj")
+___                                     # trieda každého z troch vektorov
+```
+
+**Funkcie `as.numeric()`, `as.logical()`, `as.character()`** menia triedu **zámerne**. Konverzia, ktorá nedáva zmysel, nevráti chybu, ale `NA` — preto výsledok treba skontrolovať.
+
+```{r}
+#| label: vektory-vynutenie-triedy-2
+pocty <- 0:10
+as.numeric(pocty)     # číselný
+___                                     # logický: 0 -> FALSE, všetko ostatné -> TRUE
+as.character(pocty)   # textový
+```
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Čo vráti `c(TRUE, 2)` — text alebo číslo? A čo vráti `as.logical(c("chlieb","rozok"))`?
+:::
+
+```{r}
+#| label: vektory-vynutenie-triedy-3
+#| eval: true
+tovar <- c("chlieb", "rozok"); as.logical(tovar)   # nezmyselná zmena triedy -> NA
+```
+
+## Vlastnosti vektora
+
+Dve základné vlastnosti vektora sú **typ** a **dĺžka**.
+
+**Funkcie:** `typeof(x)` vráti vnútorný typ uloženia, `length(x)` počet prvkov. Operátor `%%` vráti **zvyšok po delení** — `length(x) %% 2 == 0` sa preto pýta, či má vektor párny počet prvkov.
+
+::: {.callout-warning title="POZOR — `class()` a `typeof()` nie sú to isté"}
+`class()` vracia **triedu** objektu, teda to, ako sa s ním má zaobchádzať; `typeof()` vracia **vnútorný typ**, teda ako je uložený v pamäti. Pri bežných číslach sa odpovede líšia:
+
+- `class(1)` → `"numeric"`, ale `typeof(1)` → `"double"` (číslo s desatinnou časťou),
+- `class(1L)` → `"integer"` aj `typeof(1L)` → `"integer"` (prípona `L` vynúti celé číslo),
+- `class(matrix(1:4, 2))` → `"matrix" "array"`, ale `typeof(...)` → `"integer"` — matica je len vektor s atribútom `dim`.
+
+Pravidlo pre tento kurz: **rozhodujeme sa podľa `class()`**, `typeof()` použijeme, keď potrebujeme vedieť, prečo `0.1 + 0.2 == 0.3` nie je `TRUE`. Kto očakáva od `typeof(1)` odpoveď `"numeric"`, narazí a nebude vedieť prečo.
+:::
+
+```{r}
+#| label: vlastnosti-vektora
+#| eval: true
+pracovne_dni <- 1:5
+typeof(pracovne_dni)
+length(pracovne_dni)
+length(pracovne_dni) %% 2 == 0     # párny počet prvkov?
+```
+
+**Výber prvkov podľa pozície — `x[c(...)]`:** do hranatých zátvoriek sa píše vektor pozícií. Pozície sa môžu opakovať, takže výsledok môže byť dlhší než vstup.
+
+```{r}
+#| label: vlastnosti-vektora-3
+#| eval: true
+mesiace <- c("jan", "feb", "mar")
+mesiace[c(3, 2, 3, 1, 2)]
+```
+
+## Sekvencie
+
+**Funkcia `seq(from, to, by)`** vytvorí rovnomernú postupnosť od `from` po `to` s krokom `by`. Ak argumenty napíšete v tomto poradí, ich mená môžete vynechať.
+
+```{r}
+#| label: sekvencie
+podiely <- seq(from = 0, to = 1, by = 0.1)
+podiely <- ___                          # to isté, bez mien argumentov
+```
+
+**Argument `length.out`** (namiesto `by`) určí **počet** rovnako vzdialených prvkov — krok si R dopočíta.
+
+```{r}
+#| label: sekvencie-2
+#| eval: true
+body_21 <- seq(from = 0, to = 1, length.out = 21)   # krok 0,05
+body_11 <- seq(0, 1, length.out = 11)               # krok 0,1
+```
+
+::: {.callout-warning title="POZOR — skrátené mená argumentov"}
+V cudzom kóde uvidíte aj `seq(0, 1, len = 11)`. Funguje to len preto, že R dovolí skrátiť meno argumentu, ak je skratka jednoznačná (`len` → `length.out`). Je to zlý návyk: keď autor balíka pridá argument s podobným menom, kód ticho začne robiť niečo iné. **Mená argumentov píšte celé.**
+:::
+
+## Zoznamy
+
+Zoznam sme vytvorili v prehľade objektov (`osoba`). Tu pridávame dve veci:
+
+- zoznam nemusí mať mená komponentov — `list(5, "zajtra", TRUE)` drží tri hodnoty rôznych tried vedľa seba,
+- **funkcia `as.list(x)`** premení vektor na zoznam, v ktorom je každý prvok samostatným komponentom. Vektor si pritom zachová triedu, ktorú mu vynútila coercion — preto je aj `2` v zozname text.
+
+```{r}
+#| label: zoznamy
+#| eval: true
+zmiesany_zoznam <- list(5, "zajtra", TRUE)     # zoznam: tri rôzne triedy
+str(zmiesany_zoznam)
+
+as.list(c("ahoj", 2))                           # vektor -> zoznam; 2 je už "2"
+```
+
+Výber prvkov zo zoznamu (`[`, `[[`, `$`) preberáme podrobne v bloku 6.
+
+## PRÍKLAD Z PRAXE — kuriéri (riešenie mini-case z úvodu)
+
+::: {.callout-tip title="ÚLOHA — spoločné riešenie (študenti dopĺňajú označené riadky)"}
+Máte skutočné denné predaje (kusy) a dve predikčné metódy A a B. Porovnajte ich pomocou **MAE** a **RMSE**, odporučte lepší model a spočítajte, koľko kuriérov treba na ďalší týždeň (celé osoby → `ceiling()`; 1 kuriér zvládne \~30 objednávok za deň). Nakoniec odhadnite kontinuálnu dennú mieru rastu a 7-dňový rast (`log()` a `exp()`). Výsledky zaokrúhlite na dve desatinné miesta.
+:::
+
+Postup má šesť krokov: dáta → graf → chyby a metriky → počet kuriérov → tempo rastu → report.
+
+### Krok 1 — Dáta
+
+| Deň                        | 1   | 2   | 3   | 4   | 5   | 6   | 7   |
+|----------------------------|-----|-----|-----|-----|-----|-----|-----|
+| Skutočný predaj (`predaj`) | 120 | 135 | 128 | 150 | 142 | 160 | 155 |
+| Predikcia A (`pred_a`)     | 118 | 132 | 130 | 148 | 145 | 158 | 157 |
+| Predikcia B (`pred_b`)     | 120 | 134 | 128 | 151 | 141 | 160 | 167 |
+
+: Denné predaje a predikcie dvoch analytikov (kusy)
+
+```{r}
+#| label: kurieri-data
+#| eval: true
+predaj <- c(120, 135, 128, 150, 142, 160, 155)   # skutočné denné predaje (7 dní)
+pred_a <- c(118, 132, 130, 148, 145, 158, 157)   # predikcia analytika A
+pred_b <- c(120, 134, 128, 151, 141, 160, 167)   # predikcia analytika B
+```
+
+### Krok 2 — Graf: chyby najprv uvidieť, potom spočítať
+
+**Funkcie:**
+
+- `plot(x, type = "o", pch = 16)` — nakreslí rad. `type = "o"` kreslí body **aj** spojnicu (`"p"` len body, `"l"` len čiaru), `pch` určuje tvar bodu (16 plný krúžok, 17 trojuholník, 15 štvorec). Rôzne tvary sú dôležité preto, aby graf zostal čitateľný aj po čiernobielej tlači.
+- `ylim = range(c(...))` — `range()` vráti dvojicu minimum a maximum, tu zo **všetkých troch** radov naraz. Bez toho by `plot()` nastavil zvislú os len podľa prvého radu a body predikcií mimo tohto rozsahu by sa neviditeľne orezali — graf by klamal.
+- `lines(x, ...)` — dokreslí ďalší rad do **existujúceho** grafu; ďalší `plot()` by ho prekreslil odznova.
+- `legend("topleft", legend, col, pch, lty = 1, bty = "n")` — legenda vľavo hore; `lty = 1` pridá do legendy plnú čiaru, `bty = "n"` vypne rámček.
+
+```{r}
+#| label: kurieri-graf
+#| eval: true
+plot(predaj, type = "o", pch = 16, xlab = "deň", ylab = "predaj (kusy)",
+     ylim = range(c(predaj, pred_a, pred_b)))
+lines(pred_a, type = "o", pch = 17, col = "red")
+lines(pred_b, type = "o", pch = 15, col = "blue")
+legend("topleft", legend = c("skutočnosť", "model A", "model B"),
+       col = c("black", "red", "blue"), pch = c(16, 17, 15), lty = 1, bty = "n")
+```
+
+Model B sedí takmer presne — až na posledný deň. Model A sa mýli každý deň, ale málo. Ktorý je lepší, rozhodne metrika.
+
+### Krok 3 — Chyba predikcie a metriky MAE, RMSE
+
+Obe metriky pracujú s **chybou predikcie** $e_i = y_i - \hat y_i$:
+
+$$\text{MAE} = \frac{1}{n}\sum_{i=1}^{n}\left|y_i - \hat y_i\right|
+\qquad\qquad
+\text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}\left(y_i - \hat y_i\right)^2}$$
+
+- $y_i$ — skutočný predaj v deň $i$ (kusy)
+- $\hat y_i$ — predikcia pre deň $i$ (strieška „hat" znamená *odhad*)
+- $n$ — počet dní, tu $n = 7$
+- $\sum_{i=1}^{n}$ — sčítanie cez všetky dni
+- $|\cdot|$ — absolútna hodnota: odstráni znamienko, takže podstrelenie a prestrelenie vážia rovnako
+
+**MAE** (Mean Absolute Error — priemerná absolútna chyba) je priemerná odchýlka v kusoch; číslo sa dá čítať priamo („v priemere sa mýlime o 2 kusy denne").
+
+**RMSE** (Root Mean Square Error — odmocnina zo strednej kvadratickej chyby) najprv chyby **umocní na druhú**. Chyba 12 prispeje hodnotou 144, kým chyba 2 len hodnotou 4 — jeden veľký výpadok teda RMSE zdvihne podstatne viac než MAE. Platí vždy $\text{RMSE} \ge \text{MAE}$; čím väčší je rozdiel medzi nimi, tým nerovnomernejšie sú chyby rozložené.
+
+**Funkcie a prepojenie na vzorec:** odčítanie `predaj - pred_a` vytvorí vektor chýb $e_i$ naraz pre všetky dni (R počíta **po prvkoch**, cyklus netreba); `abs()` je absolútna hodnota $|\cdot|$, `^2` druhá mocnina, `mean()` je $\frac{1}{n}\sum$, `sqrt()` odmocnina a `sum()` samotné $\sum$ (celková absolútna chyba).
+
+```{r}
+#| label: kurieri-metriky
+chyba_a <- ___
+chyba_b <- ___
+
+mae_a  <- ___
+rmse_a <- ___
+mae_b  <- ___
+rmse_b <- ___
+
+sae_a <- sum(abs(chyba_a))        # celková absolútna chyba za týždeň
+sae_b <- sum(abs(chyba_b))
+```
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Model B má nižšie MAE (2,14 vs. 2,29), model A nižšie RMSE (2,33 vs. 4,58) — ktorý vyberiete a prečo?
+:::
+
+### Krok 4 — Koľko kuriérov: priemer verzus špička
+
+**Funkcie:** `max()` vráti najväčšiu hodnotu (špičku dopytu). `ceiling()` zaokrúhľuje **vždy nahor** — `ceiling(4.1)` je 5, lebo kuriéra nemožno objednať na 4,7 úväzku; `round()` by zaokrúhlil na najbližšie celé číslo a `floor()` vždy nadol.
+
+Kapacitu kuriéra uložíme do premennej na **jednom** mieste, aby sa dala zmeniť bez hľadania čísla 30 po celom skripte.
+
+```{r}
+#| label: kurieri-kapacita
+kapacita <- 30                                                  # objednávok na kuriéra za deň
+
+priemer_predaja <- ___
+kurieri_priemer <- ___
+
+spicka_predaja <- ___
+kurieri_spicka <- ___
+```
+
+::: {.callout-warning title="POZOR — priemer verzus špička"}
+Kapacitu **neplánujeme z priemeru**. Priemerný dopyt je 141,43 kusa denne, čo pri kapacite 30 objednávok na kuriéra dáva `ceiling(141,43 / 30)` = **5 kuriérov**. Špička je však 160 kusov, teda `ceiling(160 / 30)` = **6 kuriérov**. Kto plánuje z priemeru, nasadí o jedného kuriéra menej — a chýbať bude práve v najsilnejší deň, keď je strata najdrahšia (neprijatá objednávka aj stratený zákazník).
+
+Priemer je správna odpoveď na otázku „koľko nás to stojí za mesiac", nie na otázku „koľko ľudí potrebujeme v utorok". Kapacita sa v praxi plánuje na špičku alebo na vysoký percentil dopytu (napr. 90. percentil: `quantile(predaj, 0.9)`), pričom rozdiel medzi priemerom a špičkou je cena za pohotovosť — a to je rozhodnutie manažmentu, nie analytika.
+:::
+
+### Krok 5 — Tempo rastu: prečo `log()` a `exp()`
+
+Ak dopyt rastie stále o rovnaké **percento**, rastie geometricky, nie lineárne. Kontinuálnu (spojitú) dennú mieru rastu $g$ odhadneme z prvého a posledného dňa:
+
+$$g = \frac{\ln\!\left(y_T / y_1\right)}{T - 1},
+\qquad
+\text{denný rast} = e^{g} - 1,
+\qquad
+\text{7-dňový faktor} = e^{7g}$$
+
+- $y_1$, $y_T$ — predaj v prvý a posledný deň radu
+- $T$ — počet dní ($T = 7$); medzi krajnými dňami je preto $T - 1 = 6$ prírastkov
+- $\ln$ — prirodzený logaritmus, v R `log()`; $e^{x}$ — exponenciála, v R `exp()`
+- logaritmus podielu premení **násobný** rast na sčítateľnú veličinu, takže sa dá vydeliť počtom období; `exp()` výsledok vráti späť na násobok. Preto sa `g` sčítava, ale rast v percentách nie.
+
+**Funkcie:** `log()` a `exp()` podľa vzorca; `tail(x, 1)` vráti **posledný** prvok vektora (`head(x, 1)` prvý) — zápis je odolnejší než `predaj[7]`, lebo funguje aj vtedy, keď do radu pribudne ôsmy deň; `length()` dodá $T$.
+
+```{r}
+#| label: kurieri-rast
+#| eval: true
+g_denne     <- log(tail(predaj, 1) / predaj[1]) / (length(predaj) - 1)
+rast_denne  <- exp(g_denne) - 1            # denný rast ako podiel (0,04 = 4 %)
+faktor_7dni <- exp(7 * g_denne)            # koľkokrát vyšší dopyt o týždeň
+```
+
+::: {.callout-warning title="POZOR — odhad z dvoch bodov"}
+Tento vzorec používa **iba prvý a posledný deň** a päť hodnôt medzi nimi ignoruje. Keby posledný deň vyšiel náhodne slabý, tempo rastu vyjde záporné, aj keby rad ako celok rástol. Na sedemdňovom rade ide teda o orientačné číslo, nie o prognózu — a nikdy sa nereportuje bez uvedenia, z čoho bolo spočítané. Robustnejší odhad (regresia logaritmu predaja na čase) príde v bloku o modeloch.
+:::
+
+### Krok 6 — Report pre vedenie
+
+**Funkcie:** `round(x, 2)` zaokrúhli na dve desatinné miesta — zaokrúhľuje sa **až pri reportovaní**, nikdy v medzivýpočte. `list(meno = hodnota, ...)` zozbiera výsledky rôznych typov pod menami do jedného prehľadného výpisu.
+
+```{r}
+#| label: kurieri-report
+report <- list(
+  mae_a  = round(mae_a, 2),  rmse_a = round(rmse_a, 2),  sae_a = sae_a,
+  mae_b  = round(mae_b, 2),  rmse_b = round(rmse_b, 2),  sae_b = sae_b,
+  priemer_predaja  = round(priemer_predaja, 2),
+  kurieri_priemer  = kurieri_priemer,
+  spicka_predaja   = spicka_predaja,
+  kurieri_spicka   = kurieri_spicka,
+  denny_rast_pct   = round(100 * rast_denne, 2),
+  faktor_7dni      = round(faktor_7dni, 2)
+)
+report
+```
+
+::: {.callout-tip title="ÚLOHA — samostatná tvorba (na cvičenie)"}
+MAE aj RMSE trestajú podstrelenie a prestrelenie dopytu **rovnako**. Pre rozvoz jedla to neplatí: keď objednáme málo kuriérov, prídeme o tržbu a o zákazníka; keď priveľa, zaplatíme zbytočnú zmenu.
+
+Navrhnite **vlastnú metriku**, ktorá podstrelenie trestá dvojnásobne oproti prestreleniu, zapíšte ju vzorcom aj v R (bez cyklov, len vektorovo — pomôcka: `pmax()`), aplikujte ju na modely A a B a rozhodnite, ktorý model by ste nasadili. Potom odpovedzte na dve otázky: **líši sa** odporúčanie od odporúčania podľa MAE — a ak nie, **pri akej váhe** podstrelenia by sa líšiť začalo?
+:::
+
+::: {.callout-note title="ZHRNUTIE BLOKU 3"}
+- **Vektor** je základný objekt R; drží hodnoty **jednej** triedy. Pri miešaní tried R vynúti spoločnú triedu (coercion) v poradí logical → integer → numeric → character.
+- Triedu zisťujeme `class()`, dĺžku `length()`, typ `typeof()`; meníme ju funkciami `as.*()`. Nezmyselná konverzia vracia `NA`, nie chybu — preto ju treba kontrolovať.
+- Neznámy objekt najprv preskúmame: `str()` → `head()` → `summary()`.
+- Operácie v R sú **vektorové**: `predaj - pred_a` odčíta po prvkoch, nie je potrebný cyklus. Na tom stojí celý výpočet MAE a RMSE.
+- Vecná pointa: metrika presnosti je rozhodnutie o tom, **ktorý typ chyby je pre firmu drahší** — MAE váži všetky chyby rovnako, RMSE trestá veľké výpadky.
+:::
+
+::: {.callout-tip title="Moje poznámky"}
+*(sem si píšte vlastné poznámky, otázky a postrehy)*
+:::
+
+# Blok 4 — Logické a množinové operácie
+
+::: {.callout-note title="CIEĽ bloku"}
+Filtrovať a porovnávať množiny hodnôt (`union`, `intersect`, `setdiff`, `%in%`) a používať logické operátory.
+:::
+
+## Množinové operácie
+
+Ukážka pracuje s identifikátormi zákazníkov, ktorí nakúpili v januári a vo februári. Každá množinová funkcia odpovedá na inú obchodnú otázku.
+
+**Funkcie:**
+
+- `union(a, b)` — **zjednotenie**: všetky hodnoty, ktoré sú v `a` **alebo** v `b` (každá raz). *Koľko rôznych zákazníkov sme mali za dva mesiace?*
+- `intersect(a, b)` — **prienik**: hodnoty, ktoré sú v `a` **aj** v `b`. *Ktorí zákazníci sa vrátili?*
+- `setdiff(a, b)` — **rozdiel**: hodnoty, ktoré sú v `a`, ale **nie** v `b`. Záleží na poradí: `setdiff(jan, feb)` sú zákazníci, ktorých sme stratili, `setdiff(feb, jan)` noví zákazníci.
+- `setequal(a, b)` — sú obe množiny rovnaké (bez ohľadu na poradie a opakovanie)?
+- `a %in% b` (alebo `is.element(a, b)`) — pre **každý prvok** `a` odpovie `TRUE`/`FALSE`, či sa nachádza v `b`. Výsledok má dĺžku `a`, preto sa dá použiť ako filter alebo príznak.
+
+```{r}
+#| label: mnozinove-operacie
+zakaznici_jan <- c(101, 102, 103, 104, 105)
+zakaznici_feb <- c(103, 104, 105, 106, 107)
+
+___                                     # všetci zákazníci
+___                                     # vrátili sa
+___                                     # stratení
+setdiff(zakaznici_feb, zakaznici_jan)      # noví
+setequal(zakaznici_jan, zakaznici_feb)     # rovnaká zákaznícka báza?
+___                                     # ktorí januároví nakúpili aj vo februári
+```
+
+## Operátory
+
+- **Aritmetické**: `+, -, *, /, ^, %%` (zvyšok po delení), `%/%` (celočíselné delenie).
+- **Porovnávacie**: `<, >, ==, <=, >=, !=` — výsledkom je vždy `TRUE` alebo `FALSE`. Pozor: porovnanie je `==` (dve rovnítka), jedno `=` je priradenie.
+- **Logické**: `!` NOT (negácia), `&` AND (platí oboje), `|` OR (platí aspoň jedno), `xor(x, y)` exkluzívne OR (platí práve jedno).
+
+Porovnanie dvoch čísel je triviálne — výsledky nevypisujeme, očakávaná hodnota je v komentári:
+
+```{r}
+#| label: operatory-skalar
+#| results: hide
+#| eval: true
+2 < 3; 2 > 3      # TRUE, FALSE
+2 <= 3; 2 >= 3    # TRUE, FALSE
+2 == 3; 2 != 3    # FALSE, TRUE
+```
+
+Podstatné je, že porovnanie funguje **po prvkoch vektora** — to je základ každého filtrovania:
+
+```{r}
+#| label: operatory-vektor
+ceny_jan <- c(10, 20, 30)
+ceny_feb <- c(30, 20, 10)
+ceny_jan < 20                  # ktoré ceny sú pod 20?
+___                                     # ktoré ceny sa nerovnajú 30?
+ceny_jan >= ceny_feb           # porovnanie mesiac po mesiaci, prvok po prvku
+ceny_jan == ceny_feb
+```
+
+Logické operátory spájajú podmienky:
+
+```{r}
+#| label: operatory-logicke
+hodnotenie <- 5                        # hodnotenie produktu na škále 1–10
+___                                     # stredné hodnotenie? (oboje platí)
+hodnotenie > 4 | hodnotenie < 6        # aspoň jedno platí
+xor(hodnotenie > 4, hodnotenie < 7)    # platí práve jedno? (tu nie — platia obe)
+xor(hodnotenie > 4, hodnotenie < 2)    # platí práve jedno? (áno)
+```
+
+::: {.callout-warning title="POZOR — aritmetika s konečnou presnosťou"}
+Počítače ukladajú čísla ako aproximácie. Preto namiesto `==` pri desatinných číslach používajte `near()` z balíka `dplyr` — porovná čísla s malou toleranciou:
+
+```{r}
+#| label: presnost-desatinnych-cisel
+#| eval: true
+sqrt(2)^2 == 2            # FALSE!
+dplyr::near(sqrt(2)^2, 2) # TRUE
+```
+:::
+
+## PRÍKLAD Z PRAXE — exporty SK/CZ a regulácia CBAM
+
+::: {.callout-tip title="ÚLOHA — spoločné riešenie (študenti dopĺňajú označené riadky)"}
+Porovnajte **top exportné odvetvia** Slovenska (SK) a Česka (CZ) a označte, ktoré spadajú do politiky CBAM (Carbon Border Adjustment Mechanism — mechanizmus uhlíkového vyrovnávania: "Metals", "Cement", "Fertilizers", "Electricity"). Zistite: prienik (kde sú obe krajiny silné), rozdiely (špecializácia jednej krajiny), zjednotenie (portfólio regiónu), rovnosť množín a dopad CBAM.
+:::
+
+::: {.callout-note title="POZNÁMKA — dáta sú ilustratívne"}
+Zoznamy odvetví SK a CZ sú **zjednodušené a ilustratívne**, nie oficiálna štatistika zahraničného obchodu — slúžia na nácvik množinových operácií. Skutočné obchodné dáta budeme ťahať cez API v prednáške 3.
+
+Aj `cbam_odvetvia` je skratka. **CBAM** (Carbon Border Adjustment Mechanism — mechanizmus uhlíkového vyrovnávania na hraniciach EÚ) pokrýva v definitívnej fáze, ktorá sa začala 1. 1. 2026, šesť skupín tovarov: **cement, železo a oceľ, hliník, hnojivá, elektrinu a vodík**. Položka „Metals" tu teda zastupuje železo, oceľ a hliník; v reálnej analýze by sa odvetvia párovali na colné kódy (CN), nie na názvy.
+:::
+
+Postup má šesť krokov; množinové funkcie z úvodu bloku teraz odpovedajú na otázky obchodnej politiky.
+
+### Krok 1 — Dáta
+
+```{r}
+#| label: cbam-data
+#| eval: true
+export_sk <- c("Vehicles", "Machinery", "Electronics", "Electrical equipment", "Plastics")
+export_cz <- c("Machinery", "Vehicles", "Pharma", "Electronics", "Metals")
+cbam_odvetvia <- c("Metals", "Cement", "Fertilizers", "Electricity")
+```
+
+### Krok 2 — Kde sú obe krajiny silné a kde sa líšia
+
+`intersect()` nájde spoločné odvetvia, `setdiff()` špecializáciu — raz z pohľadu SK, raz z pohľadu CZ (poradie argumentov mení otázku).
+
+```{r}
+#| label: cbam-prienik-rozdiel
+___                                     # spoločné silné odvetvia
+___                                     # len SK
+setdiff(export_cz, export_sk)            # len CZ
+```
+
+### Krok 3 — Portfólio regiónu
+
+`union()` dá všetky odvetvia regiónu SK+CZ, `setequal()` odpovie, či majú krajiny rovnaké top odvetvia.
+
+```{r}
+#| label: cbam-zjednotenie
+___                                     # všetky odvetvia regiónu
+setequal(export_sk, export_cz)
+```
+
+### Krok 4 — Dopad CBAM
+
+`%in%` (alebo `is.element()`) označí pre každé odvetvie krajiny, či patrí do regulovanej množiny.
+
+```{r}
+#| label: cbam-dopad
+___                                     # ktoré SK odvetvia patria pod CBAM?
+export_cz %in% cbam_odvetvia
+```
+
+**Interpretácia:** žiadny SK top export nespadá priamo pod CBAM; CZ má „Metals" — jedno odvetvie regulácii podlieha.
+
+### Krok 5 — Tabuľka s príznakmi
+
+Výsledky spojíme do jednej tabuľky, v ktorej má každé odvetvie dva príznaky. Používame tri nové funkcie (dplyr a tibble sme načítali v bloku 2, chunk `load-packages`):
+
+- **`rep(hodnota, pocet)`** — zopakuje hodnotu: `rep("SK", length(export_sk))` vytvorí „SK" toľkokrát, koľko má SK odvetví. Vďaka `length()` sa to samo prispôsobí, keď do vektora pridáme ďalšie odvetvie.
+- **`tibble(stlpec = hodnoty, ...)`** — moderná podoba data frame z balíka `tibble` (súčasť tidyverse). Správa sa ako tabuľka, ale pri výpise ukáže triedu každého stĺpca a nepremieňa text na faktory. Klasické `data.frame()` funguje tiež.
+- **`mutate(tabulka, novy_stlpec = vyraz)`** — pridá do tabuľky nový stĺpec vypočítaný z existujúcich; pôvodnú tabuľku nemení, vracia novú.
+
+```{r}
+#| label: cbam-tabulka
+#| eval: true
+export_tab <- tibble(
+  krajina  = c(rep("SK", length(export_sk)), rep("CZ", length(export_cz))),
+  odvetvie = c(export_sk, export_cz)
+)
+export_tab <- mutate(export_tab, v_oboch = odvetvie %in% intersect(export_sk, export_cz))
+export_tab <- mutate(export_tab, cbam    = odvetvie %in% cbam_odvetvia)
+export_tab
+```
+
+### Krok 6 — To isté v jednom reťazci
+
+Tri kroky vyššie sa dajú zapísať ako jeden reťazec. Potrebujeme na to operátor **pipe**:
+
+- **`|>`** — operátor **reťazenia (pipe)**, súčasť základného R od verzie 4.1. Zápis `x |> f(y)` znamená to isté ako `f(x, y)`: výsledok vľavo sa vloží ako **prvý argument** funkcie vpravo. Kód sa potom číta zľava doprava ako postupnosť krokov namiesto vnorených zátvoriek, ktoré sa čítajú zvnútra von. V tomto kurze píšeme `|>`.
+- **`%>%`** — starší pipe z balíka `magrittr` (načíta sa spolu s `dplyr`). V bežnom reťazci sa správa rovnako ako `|>`, takže ho musíte vedieť **prečítať** — nájdete ho vo väčšine kódu a starších knihách — ale písať ho nemusíte.
+
+```{r}
+#| label: cbam-retazec
+#| eval: true
+export_region <- tibble(
+  krajina  = c(rep("SK", length(export_sk)), rep("CZ", length(export_cz))),
+  odvetvie = c(export_sk, export_cz)
+) |>
+  mutate(
+    v_oboch = odvetvie %in% intersect(export_sk, export_cz),   # spoločné silné odvetvia
+    cbam    = odvetvie %in% cbam_odvetvia                      # dopad regulácie
+  )
+
+identical(export_region, export_tab)     # TRUE: reťazec dal presne tú istú tabuľku
+```
+
+**Funkcia `identical(a, b)`** overí, či sú dva objekty úplne rovnaké — rýchly spôsob, ako skontrolovať, že prepis kódu nezmenil výsledok.
+
+::: {.callout-note title="POZNÁMKA — toto je ochutnávka"}
+`tibble()` a `mutate()` patria do balíka tidyverse, ktorý systematicky preberáme **od týždňa 3** (operátor `|>` je súčasť základného R). Dnes stačí rozumieť, čo kód robí — písať ho naspamäť sa od vás zatiaľ neočakáva. Zvyšok dnešnej prednášky je čisté base R.
+:::
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Aký je rozdiel medzi `setdiff(a, b)` a `setdiff(b, a)`? Je `%in%` symetrické?
+:::
+
+::: {.callout-warning title="POZOR — neprekrývajte názvy vstavaných funkcií"}
+`c <- c(1, 3, 5)` je platný kód, ale premenná `c` **prekryje** funkciu `c()` a neskorší `c(1, 2)` môže zlyhať hláškou *attempt to apply non-function*. To isté platí pre `rank`, `mean`, `sum`, `df`, `data`, `t`. Premenné pomenúvajte vecne: `export_sk`, `zakaznici_jan`, `poradie`.
+:::
+
+## ÚLOHA 1 — doplnkové precvičenie (nepovinné)
+
+Precvičenie používa tie isté funkcie ako príklad CBAM, preto je **zbalené** — rozbaľte ho, ak si chcete množinové operácie zopakovať na číslach. Na prednáške sa nerieši.
+
+::: {.callout-tip collapse="true" title="ÚLOHA 1 — doplnkové precvičenie (rozbaliť)"}
+- Vytvorte 4 vektory: (1) hodnoty 1-10; (2) hodnoty 2–20 s krokom 2; (3) hodnoty 1,3,5,6,9,13,14,16,19,20; (4) 10 náhodných hodnôt z 1-20 (funkcia `sample`).
+- Zistite: a) zjednotenie 1 a 2; b) prienik 2 a 3; c) ktoré elementy z 1 sú v 3 a na ktorých pozíciách; d) ktoré elementy sú iba v 3 a nie v 2; e) ktoré elementy zo 4 sú súčasne v 1 aj v 2.
+
+**Nové funkcie v tejto úlohe:**
+
+- `set.seed(603)` nastaví štartovací stav generátora náhodných čísel, takže `sample()` dá **pri každom spustení rovnaký výber**. Konkrétne číslo je ľubovoľné; dôležité je, že sa nemení.
+- `sample(1:20, 10)` vyberie 10 hodnôt z 1–20 **bez vracania** (žiadna sa neopakuje).
+- `which(logicky_vektor)` premení logický vektor na **pozície** hodnôt `TRUE` — z odpovede „ktoré" na odpoveď „na ktorých miestach".
+
+Vektory sa volajú `u1`–`u4` podľa číslovania v zadaní (abstraktné čísla bez vecného obsahu).
+
+```{r}
+#| label: doplnkove-mnoziny
+set.seed(603)                                   # fixovanie náhodného výberu
+u1 <- 1:10
+u2 <- seq(2, 20, 2)
+u3 <- c(1, 3, 5, 6, 9, 13, 14, 16, 19, 20)
+u4 <- sample(1:20, 10)
+
+___                                     # a)
+___                                     # b)
+je_v_u3 <- ___                          # c) ktoré prvky u1 sú v u3
+___                                     # c) na ktorých pozíciách
+___                                     # d)
+!(u3 %in% u2)                                   # d) to isté ako logický vektor (filter)
+v_u1_aj_u2 <- ___                       # e)
+___                                     # e) prvky u4, ktoré sú v u1 aj v u2
+```
+:::
+
+::: {.callout-note title="ZHRNUTIE BLOKU 4"}
+- Množinové funkcie `union()`, `intersect()`, `setdiff()`, `setequal()` pracujú s **hodnotami** a ignorujú poradie aj duplicity.
+- `setdiff()` **nie je symetrický** — `setdiff(a, b)` a `setdiff(b, a)` odpovedajú na dve rôzne otázky (stratení vs. noví zákazníci; špecializácia SK vs. CZ).
+- Porovnávacie a logické operátory pracujú **po prvkoch** a vracajú logický vektor; `&` a `|` spájajú podmienky.
+- `%in%` a `is.element()` vracajú **logický vektor rovnakej dĺžky** ako ľavá strana — preto sa dajú priamo použiť ako príznak (`cbam`) alebo ako filter riadkov.
+- Pri desatinných číslach neporovnávame cez `==`, ale cez `dplyr::near()` — počítač ukladá čísla len s konečnou presnosťou.
+- Vecná pointa: regulácia (CBAM) sa dá preložiť do dátovej otázky „ktoré prvky môjho portfólia sú v regulovanej množine?" — a tá má v R jednoriadkovú odpoveď.
+:::
+
+::: {.callout-tip title="Moje poznámky"}
+*(sem si píšte vlastné poznámky, otázky a postrehy)*
+:::
+
+# Blok 5 — Matice
+
+::: {.callout-note title="CIEĽ bloku"}
+Vytvoriť maticu, pomenovať dimenzie, vykonať maticové operácie a použiť ich na odhad OLS — most k ekonometrii.
+:::
+
+## Tvorba matíc
+
+Ukážky pracujú s maticou štvrťročných tržieb: 3 predajne (riadky) × 4 štvrťroky (stĺpce).
+
+**Funkcia `matrix(hodnoty, nrow, ncol)`** vytvorí maticu so zadaným počtom riadkov (`nrow`) a stĺpcov (`ncol`). Matica sa plní **po stĺpcoch** — prvý stĺpec zhora nadol, potom sa pokračuje ďalším stĺpcom vpravo. Ak argumenty napíšete v poradí, mená môžete vynechať: `matrix(1:12, 3, 4)`.
+
+```{r}
+#| label: tvorba-matic
+trzby <- ___
+trzby
+```
+
+**Argument `byrow = TRUE`** obráti smer plnenia — matica sa plní **po riadkoch**.
+
+```{r}
+#| label: tvorba-matic-2
+trzby <- ___
+trzby
+```
+
+**Argument `dimnames = list(riadky, stlpce)`** pomenuje riadky a stĺpce. Očakáva **zoznam dvoch vektorov**, ktorých dĺžky sa musia zhodovať s rozmermi matice.
+
+```{r}
+#| label: tvorba-matic-3
+trzby <- matrix(1:12, nrow = 3, ncol = 4, byrow = TRUE,
+                dimnames = list(c("BA", "KE", "ZA"), c("Q1", "Q2", "Q3", "Q4")))
+trzby
+```
+
+**Záporný index** riadok alebo stĺpec **vynechá** (nie „počítaj od konca" ako v Pythone). `trzby[, -1]` znamená: všetky riadky, všetky stĺpce okrem prvého.
+
+```{r}
+#| label: tvorba-matic-4
+trzby_bez_q1 <- ___
+trzby_bez_q1
+```
+
+**Funkcia `dim(x) <- c(riadky, stlpce)`** urobí maticu z obyčajného vektora tým, že mu priradí rozmery — matica je naozaj len vektor s atribútom `dim`.
+
+```{r}
+#| label: tvorba-matic-5
+#| eval: true
+trzby_vektor <- 1:12
+dim(trzby_vektor) <- c(3, 4)
+class(trzby_vektor)                     # z vektora sa stala matica
+```
+
+**Funkcie `cbind()` a `rbind()`** skladajú maticu z vektorov: `cbind()` ich dá vedľa seba ako **stĺpce**, `rbind()` pod seba ako **riadky**. Mená vektorov sa stanú menami stĺpcov (resp. riadkov).
+
+```{r}
+#| label: tvorba-matic-6
+ba <- 5:10; ke <- 15:20; za <- 30:35    # denné predaje troch predajní
+___                                     # predajne ako stĺpce
+___                                     # predajne ako riadky
+```
+
+## Názvy (names)
+
+**Funkcie:** `names(x) <- c(...)` pomenuje prvky vektora; v zozname sa mená píšu priamo pri tvorbe (`list(meno = hodnota)`); `dimnames(matica) <- list(riadky, stlpce)` pomenuje riadky a stĺpce už existujúcej matice.
+
+```{r}
+#| label: nazvy
+nakup <- c(5, 1, 2)
+___                                     # pomenovanie prvkov vektora
+nakup
+
+nakup_zoznam <- list(maso = 5, mlieko = 1, chlieb = 2)   # mená priamo v zozname
+
+trzby <- matrix(1:12, nrow = 3, ncol = 4)
+dimnames(trzby) <- list(c("BA", "KE", "ZA"), c("Q1", "Q2", "Q3", "Q4"))
+```
+
+## Operácie s maticami
+
+Pri maticiach sú dva druhy násobenia — a ich zámena je najčastejšia chyba.
+
+**Po prvkoch — `*`, `+`, `-`:** počítajú prvok s prvkom na rovnakej pozícii, preto musia mať obe matice **rovnaké rozmery**. Ekonomicky: množstvo × cena = tržba za každý produkt v každej predajni.
+
+```{r}
+#| label: operacie-po-prvkoch
+mnozstvo <- ___                         # 2 produkty x 3 predajne
+cena     <- matrix(c(2, 3, 2, 3, 2, 3), nrow = 2)         # cena za kus v eurách
+mnozstvo * cena                                            # tržba po prvkoch
+```
+
+**Maticové násobenie — `%*%`:** riadok krát stĺpec, ako v lineárnej algebre. Počet stĺpcov prvej matice sa musí rovnať počtu riadkov druhej; z matíc $2\times3$ a $3\times2$ vznikne $2\times2$. Pomocné funkcie: `t()` transponuje (riadky ↔ stĺpce), `solve()` vráti **inverznú** maticu.
+
+Tu používame matematický zápis (`A`, `A_t`) — ide o čistú algebru bez vecného obsahu, názvy kopírujú vzorec $A A^T$.
+
+```{r}
+#| label: operacie-maticove
+A   <- matrix(1:6, nrow = 2)       # matica 2 x 3
+A_t <- ___                              # transpozícia: 3 x 2
+___                                     # maticové násobenie: 2x3 %*% 3x2 = 2x2
+___                                     # inverzia štvorcovej matice
+```
+
+::: {.callout-warning title="POZOR"}
+`*` násobí po prvkoch; maticové násobenie je `%*%`. Inverzná matica (`solve()`) existuje iba k štvorcovej **regulárnej** matici (determinant ≠ 0); pri singulárnej matici `solve()` skončí chybou.
+:::
+
+## ÚLOHA 2 — samostatne (4 min)
+
+::: {.callout-tip title="ÚLOHA — your turn"}
+- Vytvorte tri vektory: (1) hodnoty 100-10 s krokom 10; (2) 10 náhodných hodnôt 1-100; (3) hodnoty 21,33,55,46,39,13,54,76,19,28.
+- Vytvorte maticu s vektormi ako riadkami a pomenujte riadky aj stĺpce; potom maticu s vektormi ako stĺpcami a pomenujte dimenzie; z oboch vymažte prvý riadok a druhý stĺpec; z prvej vyberte 2., 7., 8. a 10. stĺpec.
+:::
+
+**Nové funkcie v tejto úlohe:**
+
+- `set.seed(603)` nastaví štartovací stav generátora náhodných čísel. Vďaka nemu dá `sample()` **pri každom spustení rovnaký výber**, takže riešenie v dokumente sedí s tým, čo uvidíte na obrazovke. Konkrétne číslo je ľubovoľné; dôležité je, že sa nemení. Bez `set.seed()` je materiál s náhodnými dátami neoveriteľný.
+- `sample(1:100, 10)` vyberie 10 hodnôt z 1–100 **bez vracania** (žiadna sa neopakuje). S argumentom `replace = TRUE` by sa hodnoty opakovať mohli.
+- `seq(100, 10, -10)` — záporný krok vytvorí **klesajúcu** postupnosť.
+- `paste0("st", 1:10)` spojí text a čísla **bez oddeľovača** a vytvorí `"st1" ... "st10"` — vďaka vektorovosti netreba cyklus. Príbuzná `paste()` vkladá medzi časti medzeru (`paste("st", 1:10)` dá `"st 1"`).
+
+Vektory sa volajú `v1`–`v3` podľa číslovania v zadaní; matice podľa toho, ako sú poskladané.
+
+```{r}
+#| label: uloha-2-samostatne
+set.seed(603)                                                    # fixovanie náhodného výberu
+v1 <- ___
+v2 <- ___
+v3 <- c(21, 33, 55, 46, 39, 13, 54, 76, 19, 28)
+
+po_riadkoch <- ___
+dimnames(po_riadkoch) <- list(c("v1", "v2", "v3"), paste0("st", 1:10))
+
+po_stlpcoch <- ___
+dimnames(po_stlpcoch) <- list(paste0("r", 1:10), c("v1", "v2", "v3"))
+
+po_riadkoch_orez <- ___
+po_stlpcoch_orez <- po_stlpcoch[-1, -2]
+
+___                                     # 2., 7., 8. a 10. stĺpec
+```
+
+## ÚLOHA 3 — Odhad parametrov OLS (spoločne; pre študentov bez ekonometrie ako domáca príprava)
+
+::: {.callout-tip title="ÚLOHA — most k ekonometrii"}
+Z ekonometrie vieme, že odhad parametrov metódou **OLS** (Ordinary Least Squares — metóda najmenších štvorcov) možno zapísať:
+
+$$\hat\beta = (X^TX)^{-1}X^Ty, \qquad \text{kde } y = X\beta + u$$
+
+- $y$ — vektor vysvetľovanej premennej, rozmer $n \times 1$ (tu $n = 10$ pozorovaní)
+- $X$ — matica vysvetľujúcich premenných, rozmer $n \times k$; **prvý stĺpec sú samé jednotky** (konštanta)
+- $\beta$ — vektor neznámych parametrov, rozmer $k \times 1$; $\hat\beta$ je jeho odhad
+- $u$ — vektor náhodných zložiek (to, čo model nevysvetlí)
+- $X^T$ — transponovaná matica (v R `t(X)`), $(\cdot)^{-1}$ — inverzia (v R `solve()`)
+
+Metóda hľadá taký $\hat\beta$, ktorý **minimalizuje súčet štvorcov rezíduí** $\sum_{i=1}^{n}(y_i - \hat y_i)^2$ — geometricky: kolmo premieta vektor $y$ do priestoru natiahnutého stĺpcami $X$. Podmienka funkčnosti: $X^TX$ musí byť **regulárna** (invertovateľná), čo zlyhá pri dokonalej kolinearite stĺpcov. Nech y = 53,46,59,51,62,51,63,50,57,64 a x1 = 4,1,2,0,4,5,7,4,5,6. Vypočítajte odhady beta0 a beta1. **Upozornenie: nezabudnite na jednotkový vektor v matici X!**
+
+Postup: vektory y, x1 a jednotkový vektor (`rep()` — číslo a počet replikácií) → matica X → súčin $X^TX$ → inverzia → $(X^TX)^{-1}X^Ty$.
+:::
+
+**Funkcie a prepojenie na vzorec:** `rep(1, 10)` vytvorí jednotkový stĺpec (konštantu); `matrix(c(...), nrow = 10)` z neho a z `x1` poskladá maticu $X$; `t(X)` je $X^T$, `%*%` maticové násobenie, `solve()` inverzia $(\cdot)^{-1}$. Na overenie použijeme **`lm(y ~ x1)`** — funkciu, ktorá odhadne lineárnu regresiu priamo; zápis `y ~ x1` sa číta „y vysvetľované premennou x1" a konštantu pridá `lm()` sám.
+
+Názvy `y`, `x1`, `X` tu zámerne kopírujú vzorec.
+
+```{r}
+#| label: uloha-3-odhad-parametrov-ols
+y  <- c(53, 46, 59, 51, 62, 51, 63, 50, 57, 64)    # vysvetľovaná premenná
+x1 <- c(4, 1, 2, 0, 4, 5, 7, 4, 5, 6)              # vysvetľujúca premenná
+X  <- ___                               # matica X s jednotkovým stĺpcom
+XtX     <- ___
+XtX_inv <- ___
+beta_hat <- ___
+beta_hat                                            # 1. riadok = beta0, 2. riadok = beta1
+
+beta_hat_jednym_zapisom <- solve(t(X) %*% X) %*% t(X) %*% y   # to isté v jednom riadku
+beta_hat_jednym_zapisom
+
+___                                     # overenie pomocou lm()
+```
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Prečo musí byť v matici X jednotkový stĺpec?
+:::
+
+## PRÍKLAD Z PRAXE — matica exportov (CBAM pokračovanie)
+
+::: {.callout-tip title="ÚLOHA — samostatne alebo spoločne podľa času"}
+Zostavte „tabuľku" exportných odvetví SK a CZ z bloku 4 ako **maticu** so stĺpcami `krajina, odvetvie, v_oboch, cbam`. Postup: vektor krajín cez `rep()` + `length()`; spojenie odvetví do `odvetvie`; logické vektory `v_oboch` (členstvo v prieniku) a `cbam` (členstvo v CBAM) cez `%in%`; matica cez `cbind()`; logické stĺpce skonvertujte na text (`as.character()` — matica má jednotný typ); `rownames(..) <- NULL`.
+:::
+
+Používame vstupy `export_sk`, `export_cz` a `cbam_odvetvia` z bloku 4. Nová je len funkcia **`rownames(matica) <- NULL`**, ktorá zmaže mená riadkov (`cbind()` ich niekedy vytvorí automaticky a vo výpise by len zavadzali).
+
+```{r}
+#| label: case-cbam-matica
+# 1) Stĺpce budúcej matice ako samostatné vektory
+n_sk <- ___
+n_cz <- length(export_cz)
+
+krajina  <- ___
+odvetvie <- ___
+
+# 2) Príznaky (logické vektory)
+v_oboch <- ___
+cbam    <- ___
+
+# 3) Poskladanie do JEDNEJ matice — všetko musí byť text, matica má jeden typ
+export_mat <- cbind(
+  krajina  = krajina,
+  odvetvie = odvetvie,
+  v_oboch  = as.character(v_oboch),
+  cbam     = as.character(cbam)
+)
+rownames(export_mat) <- NULL
+export_mat
+```
+
+Porovnajte výsledok s tabuľkou `export_tab` z bloku 4: v matici sú `TRUE`/`FALSE` **text** (v úvodzovkách), v tabuľke logické hodnoty. Práve preto sa na dáta s rôznymi typmi stĺpcov používa data frame (blok 6), nie matica.
+
+::: {.callout-note title="ZHRNUTIE BLOKU 5"}
+- **Matica** je vektor s atribútom `dim`; drží hodnoty **jednej** triedy. Plní sa po stĺpcoch, `byrow = TRUE` to obráti.
+- `cbind()` / `rbind()` skladajú maticu z vektorov, `dimnames()` pomenúva rozmery, záporný index vynecháva.
+- Rozlišujeme `*` (po prvkoch) a `%*%` (maticové násobenie); `t()` transponuje, `solve()` invertuje — a inverzia existuje len k štvorcovej regulárnej matici.
+- Vecná pointa: OLS odhad je len reťazec troch maticových operácií. To, čo `lm()` robí „automaticky", ste si práve zostavili ručne.
+:::
+
+::: {.callout-tip title="Moje poznámky"}
+*(sem si píšte vlastné poznámky, otázky a postrehy)*
+:::
+
+# Blok 6 — Data frames a podmnožiny
+
+::: {.callout-note title="CIEĽ bloku"}
+Vytvoriť data frame, filtrovať cez `[`, `[[`, `$` a `subset()`, ošetriť NA — na reálnych makrodátach USA (recesia 1958).
+:::
+
+## Data frame
+
+**Funkcia `data.frame(stlpec = hodnoty, ...)`** vytvorí tabuľku. Je to špeciálna forma zoznamu — každý element (stĺpec) má rovnakú dĺžku (počet riadkov). Na rozdiel od matíc dokáže data frame ukladať **rôzne triedy po stĺpcoch**: tu celé čísla a logické hodnoty vedľa seba.
+
+```{r}
+#| label: data-frame
+dochadzka <- ___
+dochadzka
+```
+
+- Z existujúcich dát: `read.table()`, `read.csv()` (podrobne v prednáške 3).
+- Konverzia na maticu: `data.matrix(tabulka)`. Funkcia `edit()` otvorí tabuľku v okne na ručnú úpravu — je **interaktívna**, takže do skriptu ani do reprodukovateľného dokumentu nepatrí (preto je v tomto dokumente len spomenutá, nie spustená). Ručné prepisovanie dát je navyše nereprodukovateľné: každá zmena dát má byť zapísaná kódom.
+
+## Podmnožiny — tri operátory
+
+Na výber hodnôt slúžia `[`, `[[` a `$`. Kľúčový rozdiel: `[` môže vytiahnuť **viac** komponentov a zachová obal (z vektora vráti vektor, zo zoznamu zoznam); `[[` a `$` vyťahujú **jeden** komponent priamo. Prejdeme ich po jednom.
+
+**Operátor `[` pri vektore a matici:** do zátvoriek sa píšu pozície. Pri matici sú dve pozície oddelené čiarkou — `[riadok, stĺpec]`; prázdne miesto znamená „všetko".
+
+```{r}
+#| label: podmnoziny-hranate
+nakup <- c("maso", "mlieko", "chlieb", "rozok", "maso")
+___                                     # 3. až 5. položka; resp. nakup[c(3, 4, 5)]
+
+trzby_mat <- matrix(1:12, 3, 4)
+___                                     # celý 2. riadok
+___                                     # jedna bunka: 3. riadok, 2. stĺpec
+```
+
+**Filtrovanie podmienkou:** namiesto pozícií sa do `[` dá vložiť **logický vektor** — vrátia sa prvky, pri ktorých je `TRUE`. Podmienku si môžeme najprv uložiť a pozrieť.
+
+```{r}
+#| label: podmnoziny-podmienka
+hodnoty <- seq(0, 50, 10)
+nad_15 <- hodnoty > 15    # logický vektor: ktoré prvky spĺňajú podmienku
+nad_15
+___                                     # to isté v jednom kroku: hodnoty[hodnoty > 15]
+```
+
+**Funkcia `subset(tabulka, podmienka, select = stlpce)`** robí to isté pre tabuľku čitateľnejšie: vyberie riadky, ktoré spĺňajú podmienku, a z nich len uvedené stĺpce. Mená stĺpcov sa píšu bez úvodzoviek.
+
+```{r}
+#| label: podmnoziny-subset
+#| eval: true
+subset(mtcars, mpg < 20, select = c(mpg, cyl))
+```
+
+**Operátor `[` pri zozname** vráti **pod-zoznam** — stále zoznam, len s menej komponentmi. Zápis s čiarkou (`zasoby[1, 3]`) pri zozname nefunguje, lebo zoznam nemá riadky ani stĺpce.
+
+```{r}
+#| label: podmnoziny-zoznam
+#| eval: true
+zasoby <- list(maso = 1:3, mlieko = 2, chlieb = "nie")
+zasoby[c(1, 3)]       # pod-zoznam s 1. a 3. komponentom
+```
+
+**Operátor `$`** vyberie **jeden** stĺpec tabuľky alebo komponent zoznamu **podľa mena** a vráti priamo jeho obsah (vektor).
+
+```{r}
+#| label: podmnoziny-dolar
+___                                     # stĺpec podľa mena
+dochadzka$id
+```
+
+**Operátor `[[`** vyberie **jeden** komponent podľa pozície alebo mena a vráti priamo jeho obsah. Dá sa zanárať: `zasoby[[3]][[2]]` je 2. hodnota 3. komponentu; skrátene `zasoby[[c(3, 2)]]`.
+
+```{r}
+#| label: podmnoziny-dvojite
+#| eval: true
+zasoby <- list(maso = 1:3, mlieko = 2, chlieb = c("nie", "ano"))
+zasoby[[1]]           # obsah 1. komponentu (vektor 1:3), nie zoznam
+zasoby[[c(1, 3)]]     # 3. hodnota 1. komponentu; resp. zasoby[[1]][[3]]
+zasoby[[3]][[2]]      # 2. hodnota 3. komponentu
+```
+
+## Chýbajúce hodnoty (NA)
+
+**Funkcie:**
+
+- `is.na(x)` — pre každý prvok vráti `TRUE`, ak chýba. Výsledok je logický vektor, dá sa teda použiť ako filter.
+- `!` — logická negácia: `!is.na(x)` znamená „nechýba", teda `x[!is.na(x)]` vráti len známe hodnoty.
+- `na.omit(tabulka)` — vynechá **celé riadky**, v ktorých chýba hodnota v **ktoromkoľvek** stĺpci.
+- argument `na.rm = TRUE` (pri `mean()`, `sum()`…) — chýbajúce hodnoty ignoruje **len v danom výpočte**.
+
+```{r}
+#| label: chybajuce-hodnoty-vektor
+merania <- c(5, 2, NA, 5, NA, 2, 1)
+je_na <- ___
+___                                     # len známe hodnoty
+```
+
+Na tabuľke `airquality` zo začiatku bloku 3 (vo výstupe `summary()` sme videli `NA's` pri `Ozone` a `Solar.R`):
+
+```{r}
+#| label: chybajuce-hodnoty-tabulka
+head(airquality, 10)                                  # prvých 10 riadkov aj s NA
+je_na_solar <- is.na(airquality$Solar.R)
+head(airquality[!je_na_solar, ], 10)                  # bez NA v stĺpci Solar.R
+
+airquality_kompletne <- ___             # bez NA v akomkoľvek stĺpci
+nrow(airquality); nrow(airquality_kompletne)          # koľko riadkov sme stratili
+```
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Aký je rozdiel medzi `mean(tabulka$stlpec, na.rm = TRUE)` a `mean(na.omit(tabulka)$stlpec)` pri tabuľke s NA vo viacerých stĺpcoch?
+:::
+
+## PRÍKLAD Z PRAXE — makrodáta USA 1947–1962 (`longley`)
+
+::: {.callout-tip title="ÚLOHA — spoločné riešenie (študenti dopĺňajú označené riadky)"}
+**Makro-tabuľka USA 1947–1962 (`longley`)** — stĺpce: `Year`, `GNP`, `Employed` (mil.), `Unemployed` (tis.), `Population` (mil.), atď. Úlohy:
+
+- **„Slabé" roky trhu práce**: roky, keď `Unemployed` \> 75. percentil; prečo by v nich vláda čelila vyšším sociálnym výdavkom?
+- **Trhy**: z `EuStockMarkets` prvých 20 dní DAX a CAC; správali sa podobne?
+- **Kórejská vojna**: zoznam s troma komponentmi — jadro 1950–1953 (`Year, GNP, Employed`), vektor `GNP`, priemer `GNP`; použite `[` vs. `[[`.
+- **Recesia 1958**: `Year, Unemployed, Employed` pre 1957–1959; porovnajte vývoj, vykonajte diferencie.
+- **Čistenie**: simulujte NA v GNP pre 2 náhodné roky; rozdiel priemeru pred/po `na.omit()`. Prečo je to dôležité pre správu ministrovi?
+:::
+
+Postup má sedem krokov. Každý krok má jednu otázku, krátky kód a interpretáciu.
+
+### Krok 1 — Dáta a prvý pohľad
+
+**Funkcie:** `data(nazov)` načíta zabudovaný dataset do prostredia; `head(x, n)` ukáže prvé riadky; `dim()` rozmery (riadky, stĺpce); `colnames()` mená stĺpcov. Tabuľku si pre prácu skopírujeme do `usa`, aby zabudovaný `longley` zostal nedotknutý.
+
+```{r}
+#| label: longley-data
+#| eval: true
+data(longley)
+data(EuStockMarkets)
+usa <- longley
+
+head(usa, 3)
+dim(EuStockMarkets); colnames(EuStockMarkets)   # 1 860 obchodných dní x 4 indexy
+```
+
+### Krok 2 — „Slabé" roky trhu práce
+
+**Funkcie:**
+
+- `quantile(x, 0.75)` vráti 75. percentil (tretí kvartil). Výsledok je **pomenovaný** vektor (`"75%" = hodnota`); `as.numeric()` meno odstráni, aby sa neťahalo do ďalších výstupov.
+- `tabulka[riadky, stlpce]` — prvá pozícia vyberá riadky (tu logický vektor), druhá stĺpce (tu vektor mien). **Čiarka sa nesmie vynechať**, oddeľuje obe dimenzie.
+
+```{r}
+#| label: longley-slabe-roky
+nezam <- ___
+hranica_q3 <- ___
+slaby_rok <- ___
+
+slabe_roky <- ___
+slabe_roky
+nrow(slabe_roky); hranica_q3
+```
+
+**Interpretácia:** roky s výrazne uvoľneným trhom práce (nezamestnanosť nad 75. percentilom). V takých obdobiach bývajú vyššie sociálne výdavky a slabší rast miezd.
+
+### Krok 3 — Trhy: DAX verzus CAC
+
+`EuStockMarkets` je viacnásobný časový rad (denné hodnoty indexov DAX, SMI, CAC, FTSE), ale výber funguje ako pri matici: `[riadky, stlpce]`. Pri 1 860 riadkoch **nikdy nevypisujeme celé stĺpce** — na kontrolu stačí `head()`.
+
+```{r}
+#| label: longley-burzy
+burzy <- EuStockMarkets
+dax_cac_20 <- ___
+dax_cac_20
+
+burzy[2, ]            # celý 2. deň (všetky indexy)
+head(burzy[, 1:2])    # prvé dva stĺpce — len prvých 6 riadkov z 1 860
+burzy[3, 2]           # jedna bunka: 3. deň, 2. index (SMI)
+```
+
+### Krok 4 — Kórejská vojna: zoznam a rozdiel `[` / `[[` / `$`
+
+Výsledky obdobia 1950–1953 zabalíme do **zoznamu** s troma komponentmi rôzneho typu (tabuľka, vektor, pomenované číslo) a vyberieme z neho tromi spôsobmi. Podmienka na roky spája dve porovnania cez `&`.
+
+```{r}
+#| label: longley-korea
+usa_5053 <- ___
+usa_5053
+priemer_gnp <- ___
+
+korea <- list(
+  jadro = usa_5053,
+  gnp   = usa_5053$GNP,
+  sumar = c(priemer_gnp = priemer_gnp)
+)
+
+korea[c(1, 3)]        # `[`  -> pod-zoznam (stále zoznam)
+___                                     # `[[` -> priamo obsah: data frame
+korea[[2]][1:3]       # prvé 3 hodnoty GNP
+___                                     # `$`  -> podľa mena
+```
+
+**Interpretácia:** 1950–1953 zachytáva expanziu (zbrojenie počas kórejskej vojny). Priemer GNP slúži ako porovnávací bod k recesii 1958.
+
+### Krok 5 — Recesia 1958: medziročné zmeny
+
+**Funkcia `diff(x)`** vráti rozdiely susedných prvkov (`x[2]-x[1]`, `x[3]-x[2]`, …), teda medziročné zmeny. Výsledok je o **jeden prvok kratší** než vstup — prvý rok nemá s čím porovnávať. Preto sa pri skladaní tabuľky prvý rok vynecháva: `Year[-1]`.
+
+```{r}
+#| label: longley-recesia
+okolie_1958 <- usa[usa$Year >= 1957 & usa$Year <= 1959,
+                   ___                  # stĺpce Year, Unemployed, Employed
+okolie_1958
+
+zmena_nezam <- ___
+zmena_zam   <- diff(okolie_1958$Employed)
+
+cbind(Year = okolie_1958$Year[-1],
+      zmena_nezamestnanych = zmena_nezam,
+      zmena_zamestnanych   = zmena_zam)
+```
+
+**Interpretácia:** v roku 1958 nárast nezamestnaných a pokles zamestnanosti (recesia), v roku 1959 zlepšenie (oživenie trhu práce).
+
+### Krok 6 — Čistenie NA: ako spôsob ošetrenia mení priemer
+
+Do kópie tabuľky zámerne vložíme dve chýbajúce hodnoty a porovnáme dva spôsoby ich ošetrenia.
+
+**Funkcie:** `set.seed()` a `sample()` poznáte z úlohy 2 — tu vyberú 2 náhodné riadky. `seq_len(n)` vytvorí postupnosť `1, 2, …, n`; je bezpečnejšia než `1:n`, lebo pri prázdnej tabuľke dá `1:0` dvojicu `c(1, 0)` a kód ticho zlyhá, kým `seq_len(0)` korektne vráti prázdny vektor. `is.na()`, `na.rm` a `na.omit()` poznáte z úvodu bloku.
+
+```{r}
+#| label: longley-cistenie-na
+set.seed(123)
+usa_na <- usa                                        # kópia — pôvodné dáta nemeníme
+riadky_na <- sample(seq_len(nrow(usa_na)), 2)
+usa_na$GNP[riadky_na] <- NA
+
+___                                     # roky, v ktorých GNP chýba
+
+priemer_povodny <- mean(usa$GNP)
+priemer_na_rm   <- ___
+
+usa_kompletne   <- ___
+priemer_na_omit <- mean(usa_kompletne$GNP)
+
+list(
+  roky_s_na       = usa_na$Year[riadky_na],
+  priemer_povodny = priemer_povodny,
+  priemer_na_rm   = priemer_na_rm,
+  priemer_na_omit = priemer_na_omit
+)
+```
+
+**Interpretácia:** zaobchádzanie s NA mení agregáty. Pred rozhodovaním treba transparentne uviesť, koľko hodnôt chýbalo a ako boli ošetrené.
+
+### Krok 7 — Doplnky: záporné indexy, jedna bunka, celý stĺpec
+
+Záporný index **vynechá** riadky (`-(1:3)` = bez prvých troch); podmienka na riadku a meno stĺpca vyberú **jednu bunku**; `$` vráti **celý stĺpec** — pri 16 rokoch je výpis krátky.
+
+```{r}
+#| label: longley-doplnky
+usa_bez_1947_49 <- usa[-(1:3), c("Year", "GNP", "Employed")]   # vynechaj prvé 3 roky
+head(usa_bez_1947_49, 5)
+
+___                                     # jedna bunka: Employed v 1952
+usa$GNP                             # celý stĺpec cez $
+```
+
+::: {.callout-note title="PRAX"}
+Transparentné ošetrenie NA je štandardná požiadavka pri reportoch pre rozhodovateľov (ministerstvá, manažment) — nezdokumentované vynechanie riadkov môže zmeniť závery. Vraciame sa k tomu v bloku EDA (Exploratory Data Analysis — prieskumná analýza dát, týždne 6–7).
+:::
+
+## ÚLOHA 4 — samostatne (3 min)
+
+::: {.callout-tip title="ÚLOHA — your turn"}
+Načítajte tabuľku cars (`auta <- cars`, zobrazenie `View(cars)`). Uložte stĺpce speed a dist do vektorov; vytvorte tabuľky: iba autá s rýchlosťou \> 20; iba so vzdialenosťou \> 50; iba riadky 30-40; rýchlosť \> 20 a súčasne vzdialenosť ≥ 70.
+:::
+
+```{r}
+#| label: uloha-4-samostatne
+auta <- cars                                  # kópia — `cars` nechávame nedotknuté
+
+rychlost <- ___
+draha    <- ___
+
+auta_rychle    <- ___
+auta_dlha_draha <- ___
+auta_30_40     <- ___
+auta_oboje     <- ___
+```
+
+## ÚLOHA 5 — samostatne (3 min)
+
+::: {.callout-tip title="ÚLOHA — your turn"}
+Vytvorte tabuľku s troma stĺpcami: „id" (10-100, krok 10); „pritomnost" (TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE); „hodiny" (7,9,8,NA,10,9,9,8,7,10). Zobrazte riadky s id\>30; tabuľku bez NA; riadky s pritomnost == TRUE.
+:::
+
+```{r}
+#| label: uloha-5-samostatne
+evidencia <- data.frame(
+  ___                                   # id: 10 až 100 s krokom 10
+  pritomnost = c(TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE),
+  hodiny = c(7, 9, 8, NA, 10, 9, 9, 8, 7, 10)
+)
+
+___                                     # riadky s id > 30
+___                                     # tabuľka bez NA
+___                                     # len prítomní
+```
+
+::: {.callout-note title="ZHRNUTIE BLOKU 6"}
+- **Data frame** je zoznam stĺpcov rovnakej dĺžky; na rozdiel od matice môže mať **každý stĺpec inú triedu**.
+- Tri operátory výberu: `[` vracia podmnožinu (viac prvkov, zachová obal), `[[` a `$` vracajú **jeden komponent** priamo. Pri zoznamoch je rozdiel medzi `zoznam[1]` a `zoznam[[1]]` zásadný.
+- Filtrovanie riadkov = logický vektor na prvej pozícii v `[ , ]`; podmienky sa spájajú cez `&` a `|`.
+- Veľkú tabuľku nevypisujeme celú — na kontrolu stačí `head()`.
+- `NA` nie je nula ani prázdny reťazec. `is.na()` ho deteguje, `na.rm = TRUE` ho ignoruje **v danom výpočte**, `na.omit()` vyhodí **celé riadky** — a každá z ciest dá iný agregát.
+- Vecná pointa: spôsob ošetrenia `NA` mení závery reportu, preto sa vždy dokumentuje.
+:::
+
+::: {.callout-tip title="Moje poznámky"}
+*(sem si píšte vlastné poznámky, otázky a postrehy)*
+:::
+
+# Blok 7 — Zoraďovanie a poradie
+
+::: {.callout-note title="CIEĽ bloku"}
+Zoradiť dáta (`sort`, `order`), nájsť extrémy (`which.min/max`, `which`) a určiť poradie (`rank`).
+:::
+
+## Sort, order, which, rank
+
+Štyri funkcie, štyri rôzne otázky. Ukážky bežia na brzdných dráhach z tabuľky `cars` a na náhodných hodnoteniach.
+
+**Funkcia `sort(x, decreasing = FALSE)`** vráti **zoradené hodnoty** — predvolene vzostupne, s `decreasing = TRUE` zostupne. Pôvodný vektor sa nemení.
+
+```{r}
+#| label: zoradovanie-sort
+draha <- cars$dist
+draha_vzostupne <- ___
+draha_zostupne  <- ___
+head(draha_zostupne)                                        # 6 najdlhších brzdných dráh
+```
+
+**Funkcie `which.min(x)` a `which.max(x)`** nevrátia minimum ani maximum, ale jeho **pozíciu** (index). Všeobecnejšia **`which(podmienka)`** vráti pozície **všetkých** prvkov, pri ktorých platí podmienka. Pozícia je užitočnejšia než hodnota: dá sa ňou vybrať súvisiaci údaj z iného stĺpca.
+
+```{r}
+#| label: zoradovanie-which
+set.seed(603)                                     # fixovanie náhodného výberu
+hodnotenia <- sample(1:10, 5)                     # hodnotenia 5 produktov na škále 1–10
+hodnotenia
+___                                     # pozícia najhoršieho hodnotenia
+___                                     # pozícia najlepšieho hodnotenia
+which(hodnotenia >= 5)                            # pozície všetkých hodnotení aspoň 5
+```
+
+**Funkcia `order(x)`** vráti **indexy**, v akom poradí treba prvky vziať, aby boli zoradené. `x[order(x)]` dá teda to isté ako `sort(x)` — ale `order()` sa dá použiť aj na **iný** vektor alebo na riadky tabuľky, a v tom je jej sila. Argument `decreasing = TRUE` mení smer; pri číslach sa zostupné poradie často píše aj ako `order(-x)`.
+
+```{r}
+#| label: zoradovanie-order
+sort(hodnotenia)
+order(hodnotenia)                                 # indexy: kde leží najmenší, druhý najmenší...
+hodnotenia[order(hodnotenia)]                     # rovnaký výsledok ako sort()
+```
+
+**Funkcia `rank(x, ties.method)`** priradí každému prvku jeho **poradie** (1 = najmenší). Pri rovnakých hodnotách rozhoduje `ties.method`: `"average"` (predvolené, priemer poradí), `"min"`, `"max"`, `"first"`, `"last"`, `"random"`. Zostupné poradie (najväčší = 1) sa získa ako `rank(-x)`. Výsledok ukladáme do premennej `poradie`, nie `rank` — tá by prekryla funkciu.
+
+```{r}
+#| label: zoradovanie-rank
+body <- sample(1:100, 5)                          # body 5 študentov (pokračuje ten istý seed)
+body
+poradie <- ___                          # 1 = najmenej bodov
+poradie
+```
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Aký je rozdiel medzi `sort(x)` a `order(x)`?
+:::
+
+## ÚLOHA 6 — samostatne (4 min)
+
+::: {.callout-tip title="ÚLOHA — your turn"}
+Z tabuľky cars: (a) index najvyššej a najnižšej vzdialenosti; (b) premenná s rýchlosťami; (c) rýchlosť prislúchajúca autám s max/min vzdialenosťou; (d) zoradenie áut podľa vzdialenosti zostupne (vypíšte prvých 10); (e) tabuľka rozšírená o stĺpec s poradím podľa brzdnej dráhy.
+:::
+
+```{r}
+#| label: uloha-6-samostatne
+# (a) indexy extrémov
+i_min <- ___
+i_max <- ___
+
+# (b) premenná s rýchlosťami
+rychlost <- cars$speed
+
+# (c) rýchlosť auta s najkratšou a najdlhšou brzdnou dráhou
+___                                     # rýchlosť auta s najkratšou dráhou
+___                                     # rýchlosť auta s najdlhšou dráhou
+
+# (d) zoradenie zostupne podľa brzdnej dráhy — stačí prvých 10 z 50
+___                                     # zostupne podľa dist, prvých 10
+
+# (e) tabuľka rozšírená o poradie podľa brzdnej dráhy
+#     ties.method píšeme CELÝM názvom — `t =` funguje len vďaka čiastočnej zhode
+poradie_drahy <- ___
+
+auta_poradie <- cars                 # pracujeme s KÓPIOU, `cars` nechávame nedotknuté
+auta_poradie$poradie <- ___
+head(auta_poradie[order(auta_poradie$poradie), ])
+```
+
+## ÚLOHA 7 — komplexná (domáca príprava na cvičenie)
+
+::: {.callout-tip title="ÚLOHA — komplexné precvičenie"}
+Dataset `cars` je v imperiálnych jednotkách: `speed` je rýchlosť v **míľach za hodinu (mph)**, `dist` je **brzdná dráha v stopách (ft)** — teda dráha od zošliapnutia brzdy po zastavenie, nie dojazd auta. Prevodné vzťahy: 1 míľa = 1,609344 km; 1 stopa = 0,3048 m.
+
+Vytvorte tabuľku s pôvodnými stĺpcami + brzdná dráha v metroch + rýchlosť v km/h + približný čas brzdenia. Nové stĺpce zaokrúhlite (`round(x, digits)`) na 1 desatinné miesto. Zobrazte autá s brzdnou dráhou \> 25 m a rýchlosťou aspoň 30 km/h, zoradené podľa najdlhšej brzdnej dráhy.
+
+Postup: nové vektory (prepočet, čas) → prvých 5 pozorovaní → zaokrúhlenie → tabuľka s 5 stĺpcami → zoradenie cez order → filter s `&`.
+:::
+
+```{r}
+#| label: uloha-7-komplexna
+# prepočet jednotiek
+draha_m      <- ___                     # stopy -> metre
+rychlost_kmh <- ___                     # mph -> km/h
+
+# približný čas brzdenia: pri rovnomernom spomalení z v na 0 je
+# priemerná rýchlosť v/2, takže t = 2*s/v  (v prepočítané na m/s)
+cas_brzdenia_s <- ___
+
+head(draha_m, 5); head(rychlost_kmh, 5); head(cas_brzdenia_s, 5)
+
+# zaokrúhlenie
+draha_m        <- ___
+rychlost_kmh   <- round(rychlost_kmh, 1)
+cas_brzdenia_s <- round(cas_brzdenia_s, 1)
+
+# tabuľka s piatimi stĺpcami
+auta_si <- ___
+
+# zoradenie podľa najdlhšej brzdnej dráhy
+auta_si <- ___
+
+# filter: brzdná dráha > 25 m a rýchlosť >= 30 km/h
+___                                     # dráha > 25 m a rýchlosť ≥ 30 km/h
+```
+
+::: {.callout-warning title="POZOR — jednotky sú súčasť analýzy"}
+`cars` pochádza z 20. rokov 20. storočia a `dist` je brzdná dráha, nie dojazd. Keby sme stopy prepočítali ako míle, dostali by sme autá s brzdnou dráhou 190 km. Pred každým prepočtom si overte jednotky v `?cars`.
+:::
+
+::: {.callout-tip title="ÚLOHA — pokračovanie"}
+Vypočítajte priemernú rýchlosť áut (km/h) a počet áut s podpriemernou rýchlosťou; zobrazte ich. Vytvorte náhodný vektor skratiek piatich regiónov (BA, TT, BB, PD, KE; 50 pozorovaní) a rozšírte `auta_si`. Vytvorte tabuľku bez BA; tabuľku iba s PD a KE; priemernú rýchlosť áut z BB. Pri tabuľkách vypíšte len prvých 10 riadkov.
+:::
+
+**Nový argument:** `sample(x, n, replace = TRUE)` — výber **s vracaním**: z 5 skratiek tvoríme 50 hodnôt, takže sa musia opakovať. Bez tohto argumentu by R hlásilo, že výber je väčší než populácia.
+
+```{r}
+#| label: uloha-7-pokracovanie
+priemer_kmh <- ___
+pocet_pod   <- ___
+auta_pomale <- auta_si[auta_si$rychlost_kmh < priemer_kmh, ]
+priemer_kmh; pocet_pod
+head(auta_pomale, 10)
+
+set.seed(603)                                                    # fixovanie náhodného výberu
+region <- ___
+auta_si$region <- ___
+
+nie_ba <- ___
+head(auta_si[nie_ba, ], 10)
+___                                     # len PD a KE, prvých 10
+___                                     # priemerná rýchlosť áut z BB
+```
+
+## ÚLOHA 8 — ekonomický variant (na cvičenie)
+
+::: {.callout-tip title="ÚLOHA — your turn"}
+Tie isté operácie ako v ÚLOHÁCH 4–7, ale na makrodátach `longley` (USA 1947–1962), kde má každý výsledok ekonomickú interpretáciu:
+
+- 
+
+  a)  Vytvorte kópiu `longley` a pridajte stĺpec `index_nezam` — **bázický index** nezamestnanosti so základom v roku 1947 (hodnota v roku $t$ delená hodnotou v roku 1947, krát 100). Index je bezrozmerný, takže sa vyhneme otázke jednotiek.
+
+- 
+
+  b)  Zoraďte roky **zostupne** podľa `Unemployed` a vypíšte prvé tri — v ktorých rokoch bol trh práce najslabší?
+
+- 
+
+  c)  Nájdite rok s **maximálnym** a **minimálnym** `GNP` a vypíšte pre ne `Year`, `GNP` a `Employed`.
+
+- 
+
+  d)  Pridajte stĺpec `poradie_gnp` = poradie roka podľa `GNP` zostupne (najvyšší GNP = 1).
+
+- 
+
+  e)  Vyberte roky, v ktorých bola nezamestnanosť nad priemerom **a súčasne** rok bol pred 1958. Koľko ich je?
+
+- 
+
+  f)  Jednou vetou: čo by tieto čísla znamenali pre odhad sociálnych výdavkov?
+:::
+
+```{r}
+#| label: uloha-8-ekonomicky-variant
+makro <- ___
+
+# a) bázický index nezamestnanosti, základ 1947 = 100
+#    makro$Unemployed[1] je hodnota za rok 1947 (prvý riadok tabuľky)
+makro$index_nezam <- ___
+head(makro[, c("Year", "Unemployed", "index_nezam")], 4)
+
+# b) tri roky s najvyššou nezamestnanosťou
+___                                     # b) tri roky s najvyššou nezamestnanosťou
+
+# c) roky s extrémnym GNP
+i_max <- ___
+i_min <- ___
+___                                     # c) Year, GNP, Employed pre oba roky
+
+# d) poradie rokov podľa GNP (zostupne, najvyšší = 1)
+makro$poradie_gnp <- ___
+head(makro[order(makro$poradie_gnp), c("Year", "GNP", "poradie_gnp")], 3)
+
+# e) nadpriemerná nezamestnanosť pred rokom 1958
+nadpriemer_pred_1958 <- ___
+makro[nadpriemer_pred_1958, c("Year", "Unemployed", "GNP")]
+___                                     # e) koľko je takých rokov
+```
+
+::: {.callout-warning title="POZOR — prečo index, a nie miera nezamestnanosti"}
+V `longley` **nie sú stĺpce v rovnakých jednotkách**: `Employed` a `Population` sú v miliónoch osôb, zatiaľ čo `Unemployed` je v inej mierke. Podiel `Unemployed / Population` by preto nedal mieru nezamestnanosti, ale nezmyselné číslo — presne tá istá pasca ako pri `cars$dist` v ÚLOHE 7. Bázický index sa počíta z **tej istej premennej v dvoch obdobiach**, takže sa jednotky vykrátia a výsledok je korektný bez ohľadu na to, v akej mierke sú dáta uložené. Pred každým podielom dvoch rôznych stĺpcov si overte jednotky v `?longley`.
+:::
+
+::: {.callout-note title="ZHRNUTIE BLOKU 7"}
+- `sort()` vracia **hodnoty**, `order()` vracia **indexy**. Tabuľku podľa stĺpca zoradíme len cez `order()` — `sort()` by rozbil väzbu medzi stĺpcami.
+- `which.min()` / `which.max()` dávajú **pozíciu** extrému, `which()` pozície všetkých prvkov spĺňajúcich podmienku; pozíciu potom použijeme na výber súvisiacich údajov z iných stĺpcov.
+- `rank()` prideľuje poradie od najnižšej hodnoty; zostupné poradie získame cez `rank(-x)`, zhodné hodnoty rieši `ties.method`.
+- Vecná pointa: „top 10 podľa obratu" alebo „poradie regiónov" sú `order()` a `rank()` — nie ručné triedenie v Exceli.
+:::
+
+::: {.callout-tip title="Moje poznámky"}
+*(sem si píšte vlastné poznámky, otázky a postrehy)*
+:::
+
+# Blok 8 — Git: verzovanie kódu na vlastnom počítači
+
+::: {.callout-note title="CIEĽ bloku"}
+Do konca bloku máte nainštalovaný Git, nastavenú identitu a vo svojom RStudio Projekte **vlastný lokálny repozitár**: viete urobiť commit, prezrieť si históriu zmien a vrátiť sa k staršej verzii súboru. Všetko prebieha **výlučne na vašom počítači** — bez konta, bez registrácie, bez internetu.
+:::
+
+::: {.callout-tip title="MINI-CASE — otváracia otázka"}
+Kto z vás niekedy mal na disku `bakalarka_final.docx`, `bakalarka_final_v2.docx`, `bakalarka_FINAL_naozaj.docx`? A kto z nich vie po týždni povedať, v ktorej z nich je ešte ten graf, čo ste v utorok vymazali? Presne tento problém rieši Git: jeden priečinok, jedna aktuálna verzia súboru — a úplná história všetkých predchádzajúcich stavov, do ktorých sa viete kedykoľvek vrátiť.
+:::
+
+## Prečo verzovať kód
+
+- **História zmien** — ku každému uloženému stavu viete, čo sa zmenilo, kedy a prečo.
+- **Návrat späť** — keď „to ešte včera fungovalo", viete sa k tej verzii vrátiť jedným príkazom namiesto hľadania v koši.
+- **Bezpečné experimentovanie** — prepísať kus kódu prestane byť riziko, lebo pôvodná verzia je uložená.
+- **Štandard naprieč odvetvím** — Git je bežná požiadavka v inzerátoch pre dátových analytikov a vedcov; základná práca s ním je zamestnateľnostná zručnosť.
+
+Dva pojmy, ktoré budeme používať od tejto chvíle:
+
+- **Repozitár (repository)** — priečinok projektu, v ktorom Git sleduje zmeny. Celá história je uložená v skrytom podpriečinku `.git` priamo v ňom.
+- **Commit** — uložený snímok (snapshot) stavu projektu v danom okamihu, doplnený o správu, autora a čas. Commit nie je „uloženie súboru" (to robí Ctrl+S), ale **zápis do histórie**, ktorý tam ostane natrvalo.
+
+::: {.callout-note title="POZNÁMKA — Git verzus GitHub"}
+- **Git** je program nainštalovaný na vašom počítači. Verzuje súbory lokálne a funguje úplne bez internetu.
+- **GitHub** je webová služba, ktorá drží online kópiu repozitára (zdieľanie, spolupráca, portfólio). Je to **nadstavba**, nie podmienka — na verzovanie vlastného kódu ju nepotrebujete.
+- Dnes preberáme **iba Git**. Komu sa oplatí ísť ďalej, nájde kompletný postup pre GitHub v **Bonuse na konci dokumentu**.
+:::
+
+::: {.callout-note title="PRAX — ako to súvisí s odovzdávaním"}
+Zadanie a projekt sa v tomto predmete odovzdávajú cez **Turnitin a MS Teams**, nie cez Git. Git preto nie je odovzdávací kanál, ale **váš pracovný nástroj**: chráni vás pred stratou rozpracovanej verzie počas týždňov, keď na projekte pracujete.
+:::
+
+## Krok 1 — Inštalácia Gitu
+
+- **Windows**: inštalátor z <https://git-scm.com/downloads>; ponechať predvolené nastavenia.
+- **macOS**: `xcode-select --install` v termináli, alebo inštalátor z git-scm.com.
+- **Linux**: `sudo apt install git` (Debian/Ubuntu) alebo ekvivalent distribúcie.
+- Overenie (terminál, prípadne v RStudiu záložka **Terminal** vedľa konzoly):
+
+```{bash}
+#| label: git-krok-1-instalacia
+#| eval: false
+___                                     # overenie inštalácie
+```
+
+**Vysvetlenie:** `git --version` vypíše nainštalovanú verziu (napr. `git version 2.45.1`). Ak terminál namiesto toho hlási, že príkaz nepozná, Git nie je nainštalovaný alebo RStudio treba po inštalácii reštartovať.
+
+## Krok 2 — Nastavenie identity
+
+- Git podpisuje **každý commit** menom a emailom. Nastavuje sa raz na počítači, nie pri každom projekte:
+
+```{bash}
+#| label: git-krok-2-identita
+#| eval: false
+___                                     # vaše meno
+___                                     # váš email
+git config --global --list        # overenie nastavenia
+```
+
+**Vysvetlenie:**
+
+- `git config` zapisuje nastavenia Gitu; prepínač `--global` znamená „platí pre všetky repozitáre tohto používateľa na tomto počítači" (bez neho by nastavenie platilo len pre jeden projekt).
+- `user.name` a `user.email` sú položky, ktoré Git vloží do každého commitu — preto bez nich prvý commit odmietne vytvoriť.
+- `--list` vypíše aktuálne nastavenia; hodnoty viete kedykoľvek prepísať opätovným spustením príkazu.
+
+## Krok 3 — Pracovný priečinok: prečo ho od dnes NEriešime cez `setwd()`
+
+Git verzuje priečinok. Skôr než nejaký založíme, treba vyriešiť, ako R vôbec zistí, kde „je" — lebo práve tu vzniká najčastejší dôvod, prečo cudzí skript nezbehne.
+
+```{r}
+#| label: pracovny-priecinok-setwd
+#| eval: false
+getwd()            # zistenie pracovného priečinka
+setwd("C:/")       # zmena pracovného priečinka — LEN ukážka, nespúšťame
+```
+
+::: {.callout-warning title="POZOR — prax"}
+`setwd("C:/moje/dokumenty/...")` s pevnou cestou sa na inom počítači pokazí a ničí reprodukovateľnosť. Od dnešnej hodiny používame **RStudio Projects** (nasledujúci krok) — pracovný priečinok je definovaný projektom automaticky.
+:::
+
+## Krok 4 — RStudio Project (`.Rproj`) ako základ repozitára
+
+- RStudio Project definuje **pracovný priečinok projektu** — koniec pevných ciest cez `setwd()` z predchádzajúceho kroku.
+- Git verzuje vždy **celý priečinok**, takže projekt a repozitár je od dnes to isté miesto.
+- Odporúčaná štruktúra:
+
+```         
+moj_projekt/
+├── moj_projekt.Rproj
+├── data/            # vstupné dáta
+├── R/               # skripty a funkcie
+├── output/          # výstupy (grafy, reporty)
+├── .gitignore       # čo sa nemá verzovať
+└── .git/            # skrytý priečinok — celá história (nemazať, nepresúvať)
+```
+
+## Krok 5 — Založenie lokálneho repozitára
+
+**Spôsob A — priamo v RStudiu (odporúčaný):**
+
+1.  **File → New Project → New Directory → New Project**.
+2.  Zadať názov priečinka a umiestnenie.
+3.  Zaškrtnúť **Create a git repository**.
+4.  **Create Project** — vznikne projekt, ktorý je zároveň repozitár; v pravom hornom paneli pribudne záložka **Git**.
+
+**Spôsob B — existujúci priečinok cez terminál:**
+
+```{bash}
+#| label: git-krok-4-init
+#| eval: false
+cd cesta/k/projektu
+___                                     # vytvorí prázdny repozitár (.git)
+___                                     # stav: čo Git zatiaľ nesleduje
+```
+
+**Vysvetlenie:**
+
+- `cd` (change directory) presunie terminál do priečinka projektu — Git vždy pracuje s priečinkom, v ktorom stojíte.
+- `git init` vytvorí skrytý podpriečinok `.git`. Až týmto sa z obyčajného priečinka stáva repozitár. Príkaz sa spúšťa **raz za projekt**.
+- `git status` je najpoužívanejší príkaz vôbec: vypíše, ktoré súbory sú zmenené, ktoré sú pripravené na commit a ktoré Git zatiaľ vôbec nesleduje (*untracked*).
+
+::: {.callout-warning title="POZOR"}
+Priečinok `.git` obsahuje **celú históriu projektu**. Ak ho vymažete alebo presuniete mimo projektu, história je nenávratne preč — samotné súbory ostanú, ale všetky commity zmiznú.
+:::
+
+## Krok 6 — Tri oblasti, medzi ktorými sa súbor pohybuje
+
+```{mermaid}
+flowchart LR
+    A[Pracovný priečinok<br/>súbory, ktoré editujete] -->|git add| B[Staging area<br/>pripravené na commit]
+    B -->|git commit| C[Lokálny repozitár<br/>.git — história commitov]
+    C -->|git restore --source| A
+```
+
+- **Pracovný priečinok (working directory)** — súbory tak, ako ich práve vidíte a editujete v RStudiu.
+- **Staging area (odkladacia oblasť)** — medzikrok, kam príkazom `git add` vyberáte, ktoré zmeny sa majú stať súčasťou najbližšieho commitu. Umožňuje commitnúť len časť rozpracovaných zmien.
+- **Lokálny repozitár** — história commitov uložená v `.git`.
+
+## Krok 7 — Základný pracovný cyklus
+
+```{bash}
+#| label: git-krok-6-cyklus
+#| eval: false
+___                                     # čo sa zmenilo od posledného commitu
+___                                     # do stagingu jeden konkrétny súbor
+git add .                              # alebo všetky zmeny naraz
+___                                     # zápis do histórie so správou
+___                                     # stručná história commitov
+```
+
+**Vysvetlenie:**
+
+- `git add <súbor>` presunie zmeny do staging area. Bodka (`.`) zastupuje „všetko v aktuálnom priečinku vrátane podpriečinkov".
+- `git commit` zapíše obsah staging area do histórie. Prepínač `-m` („message") pripája správu priamo v príkaze; bez neho Git otvorí textový editor a čaká na jej napísanie.
+- `git log` vypíše históriu; `--oneline` ju skráti na jeden riadok na commit — skrátený identifikátor (hash, napr. `a1b2c3d`) a správa.
+
+::: {.callout-note title="PRAX — štýl commitov"}
+Jeden commit = jeden logický krok („import dát", „čistenie NA", „graf exportov podľa rokov"). Nie jeden veľký commit na konci semestra — vtedy je história nepoužiteľná, lebo sa niet kam vrátiť. Správa má povedať **čo a prečo**, nie „zmeny" alebo „update".
+:::
+
+## Krok 8 — Git v RStudiu (GUI)
+
+- Projekt s repozitárom → záložka **Git** (vedľa Environment/History).
+- **Staged** zaškrtávacie políčko = `git add` pre daný súbor.
+- Tlačidlo **Commit** otvorí okno so zoznamom zmien, poľom na správu a náhľadom **Diff** (zelené riadky pridané, červené odstránené).
+- **History** (ikona hodín) = `git log` v prehľadnej podobe: commit, autor, čas, zoznam zmenených súborov.
+- Tlačidlá **Push** a **Pull** sa týkajú vzdialeného repozitára — dnes ich nepoužívame (viď Bonus).
+- Na bežnú prácu GUI plne stačí; terminál potrebujete pri prvom nastavení a pri menej častých operáciách.
+
+## Krok 9 — Súbor `.gitignore`
+
+- Textový súbor v koreni projektu, ktorý definuje, čo sa **nemá verzovať** — dočasné, veľké, citlivé alebo lokálne špecifické súbory.
+- Odporúčaný obsah pre R projekt:
+
+```         
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.html
+data/velke_data.csv
+```
+
+**Vysvetlenie:** hviezdička (`*`) zastupuje ľubovoľný text, takže `*.html` vynechá všetky vyrenderované reporty; lomka na konci (`.Rproj.user/`) označuje celý priečinok. Riadok s konkrétnou cestou vynechá jeden súbor.
+
+::: {.callout-warning title="POZOR"}
+**Nikdy necommitujte:** heslá, API kľúče, tokeny, osobné údaje respondentov. Commit je trvalý záznam — neskoršie vymazanie súboru ich z histórie neodstráni.
+:::
+
+## Krok 10 — História a návrat k staršej verzii
+
+Toto je dôvod, prečo verzujeme. Prehľad zmien:
+
+```{bash}
+#| label: git-krok-9-historia
+#| eval: false
+___                                     # zoznam commitov a ich hashov
+___                                     # neuložené zmeny oproti poslednému commitu
+git diff --staged                 # zmeny už pripravené v stagingu
+git show a1b2c3d                  # čo presne obsahoval daný commit
+```
+
+Návrat späť:
+
+```{bash}
+#| label: git-krok-9-navrat
+#| eval: false
+___                                     # zahodí neuložené zmeny v súbore
+___                                     # načíta verziu súboru z daného commitu
+git revert a1b2c3d                             # novým commitom zruší starší commit
+```
+
+**Vysvetlenie:**
+
+- `git diff` porovnáva pracovný priečinok s posledným commitom a vypíše zmenené riadky.
+- `git show <hash>` zobrazí obsah konkrétneho commitu; hash skopírujete z výpisu `git log --oneline`.
+- `git restore <súbor>` prepíše súbor verziou z posledného commitu — použite, keď ste niečo rozbili a chcete sa vrátiť na naposledy funkčný stav.
+- `git restore --source=<hash> <súbor>` urobí to isté, ale zdrojom je **ľubovoľný starší commit**; súbor sa objaví v pracovnom priečinku ako zmena, ktorú môžete commitnúť.
+- `git revert <hash>` nemaže históriu: vytvorí **nový** commit, ktorý ruší účinok staršieho. Bezpečnejšie ako mazanie commitov.
+
+::: {.callout-warning title="POZOR"}
+`git restore` **nenávratne zahodí neuložené zmeny** v danom súbore — Git ich nemá kde vziať späť, lebo neboli commitnuté. Pred jeho použitím vždy `git status`, aby ste vedeli, o čo prídete.
+:::
+
+## Krok 11 — Záloha repozitára bez GitHubu
+
+- Skopírovaním celého priečinka projektu (**vrátane `.git`**) na externý disk alebo do cloudového priečinka prenesiete aj kompletnú históriu.
+- Alternatíva — plnohodnotná kópia repozitára príkazom:
+
+```{bash}
+#| label: git-krok-10-zaloha
+#| eval: false
+___                                     # kópia repozitára aj s históriou
+```
+
+**Vysvetlenie:** `git clone` vytvorí novú kópiu repozitára aj s celou históriou. Zdrojom môže byť webová adresa (to je prípad GitHubu v Bonuse), ale rovnako dobre aj **cesta na vlastnom disku** — preto funguje úplne offline.
+
+::: {.callout-warning title="POZOR — Git nie je záloha"}
+Git vás chráni pred **vlastnými chybami** (prepísaný kód, zmazaný blok, nefunkčná úprava). Nechráni pred stratou počítača — `.git` je v tom istom priečinku ako projekt. Zálohu preto vždy držte aj na druhom mieste.
+:::
+
+## ÚLOHA 9 — samostatne (5 min)
+
+::: {.callout-tip title="ÚLOHA — your turn"}
+Vo svojom RStudio Projekte:
+
+a)  založte repozitár (zaškrtnutím pri tvorbe projektu alebo `git init`);
+b)  vytvorte súbor `R/uloha1.R` s ľubovoľným riadkom kódu z dnešnej hodiny a commitnite ho so správou `prvy commit`;
+c)  súbor zmeňte (pridajte druhý riadok) a urobte druhý commit;
+d)  vypíšte históriu a zistite hash prvého commitu;
+e)  vráťte do pracovného priečinka **pôvodnú** verziu súboru z prvého commitu.
+:::
+
+```{bash}
+#| label: uloha-9-riesenie
+#| eval: false
+# a) založenie repozitára
+___                                     # a)
+
+# b) prvý commit
+___                                     # b) súbor do stagingu
+___                                     # b) prvý commit
+
+# c) druhý commit po úprave súboru
+git add R/uloha1.R
+___                                     # c) druhý commit
+
+# d) história — hash prvého commitu je v poslednom riadku výpisu
+___                                     # d) stručná história
+
+# e) návrat pôvodnej verzie (hash nahraďte tým z bodu d)
+___                                     # e) verzia súboru z prvého commitu
+git status                        # súbor je zmenený => dá sa commitnúť
+```
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Upravili ste skript, uložili ho cez Ctrl+S a spustili `git commit -m "oprava"`. Git odpovie, že nie je čo commitnúť. Čo ste vynechali?
+:::
+
+::: {.callout-note title="POZNÁMKA — čo sme dnes vynechali"}
+Git vie oveľa viac: **vetvy (branches)** na paralelné verzie projektu a **vzdialené repozitáre** na online kópiu a spoluprácu. Na samostatnú prácu ich nepotrebujete; kto chce ísť ďalej, nájde vzdialené repozitáre v Bonuse na konci dokumentu.
+:::
+
+::: {.callout-note title="ZHRNUTIE BLOKU 8"}
+- **Git je lokálny nástroj.** Celá história žije v skrytom priečinku `.git` vo vašom projekte; na verzovanie vlastného kódu nepotrebujete internet, konto ani GitHub.
+- Pracovný cyklus má tri kroky a zodpovedá trom oblastiam: zmeny v pracovnom priečinku → `git add` (staging) → `git commit` (história). `git status` sa pýtame pred každým z nich.
+- **Commit nie je uloženie súboru.** Ctrl+S zapíše súbor na disk; commit zapíše stav projektu do histórie spolu so správou, autorom a časom — a tam zostane.
+- Návrat späť: `git log --oneline` nájde hash, `git restore --source=<hash> <súbor>` vráti konkrétnu verziu. `git restore` **bez** `--source` zahodí necommitnuté zmeny nenávratne — preto pred ním vždy `git status`.
+- `.gitignore` drží mimo repozitára to, čo tam nepatrí: dočasné súbory, veľké dáta a predovšetkým **heslá, tokeny a osobné údaje**.
+- Vecná pointa: verzovanie je lacná poistka — cena je jeden príkaz na konci každého cvičenia, výnosom je, že sa vždy viete vrátiť k poslednej funkčnej verzii.
+:::
+
+::: {.callout-tip title="Moje poznámky"}
+*(sem si píšte vlastné poznámky, otázky a postrehy)*
+:::
+
+# Exit ticket (5 min, bez počítača) {.unnumbered}
+
+::: {.callout-tip title="ÚLOHA — exit ticket"}
+Odpovedzte písomne (2–3 vety / riadok kódu), odovzdajte pri odchode alebo do formulára:
+
+1.  Čo vráti `c(TRUE, 5, "a")` a prečo?
+2.  Napíšte jeden riadok kódu, ktorý z tabuľky `cars` vyberie autá so `speed > 15`.
+3.  Zoraďte správne príkazy lokálneho pracovného cyklu: `git commit -m "..."`, `git status`, `git add .`
+4.  Rozbili ste skript a chcete späť verziu z posledného commitu. Ktorý príkaz použijete a čím riskujete?
+:::
+
+# Zhrnutie a čo ďalej {.unnumbered}
+
+- Dnes: data science lifecycle → práca s balíkmi (`install.packages()` vs. `library()`) → objekty R (vektory, matice, data frames) → podmnožiny a NA → zoraďovanie → **Git a lokálne verzovanie kódu**.
+- Git používame ako **pracovný nástroj** počas celého semestra: commitujte skript na konci každého cvičenia, aby ste sa vedeli vrátiť k funkčnej verzii.
+- **Odovzdávanie zadania a projektu: cez Turnitin a MS Teams.** Nie cez Git ani GitHub.
+- Na cvičení: praktické precvičenie úloh 2–8 + založenie vlastného lokálneho repozitára a prvé commity (samostatný súbor cvičenia).
+- **Bonus na konci tohto dokumentu** (nad rámec prednášky, nie je predmetom skúšky): GitHub od registrácie po push a `renv` na uzamknutie verzií balíkov.
+- Budúci týždeň: základy programovania v R (podmienky, cykly, funkcie).
+
+# BONUS — GitHub a `renv` (nad rámec prednášky)
+
+::: {.callout-note title="CIEĽ bonusu"}
+Pochopiť, čo GitHub pridáva k lokálnemu Gitu z Bloku 8, a v prípade záujmu si založiť konto, prvý vzdialený repozitár a prepojiť ho s RStudiom. Druhá časť vysvetľuje `renv` — uzamknutie verzií balíkov kvôli reprodukovateľnosti.
+:::
+
+## B1 — Čo pridáva GitHub k lokálnemu Gitu
+
+- **Vzdialený repozitár (remote)** — kópia repozitára uložená na serveri. Lokálna história sa naň nahráva príkazom `git push` a sťahuje príkazom `git pull`.
+- Prínosy oproti čisto lokálnej práci: záloha mimo vášho počítača; práca na dvoch počítačoch (škola/domov); spolupráca viacerých ľudí na jednom projekte; verejné portfólio, ktoré vidia zamestnávatelia.
+- Alternatívy k GitHubu s rovnakým princípom: GitLab, Bitbucket.
+
+## B2 — Založenie konta na GitHub
+
+1.  <https://github.com> → **Sign up**.
+2.  Email, heslo, používateľské meno.
+    - Odporúčanie: jednoduché, profesionálne meno (napr. `jan-novak`) — profil často slúži ako **portfólio pri hľadaní práce**.
+3.  Overiť email podľa doručenej správy.
+4.  Odporúčané: profilová fotka a popis v **Settings → Public profile**.
+5.  Email v `git config user.email` (Krok 2 v bloku 8) nastavte **rovnaký ako na konte** — commity sa potom správne priradia k profilu.
+
+## B3 — Autentifikácia: Personal Access Token (PAT)
+
+- GitHub **nepodporuje prihlasovanie heslom** cez príkazový riadok — používa sa **PAT** (dočasný prístupový token) alebo SSH kľúč.
+- Postup pre PAT:
+  1.  Avatar vpravo hore → **Settings** → **Developer settings** (úplne dole) → **Personal access tokens → Tokens (classic)** → **Generate new token (classic)**.
+  2.  **Note** (napr. „skolsky-pc"), **Expiration** (napr. 90 dní), zaškrtnúť oprávnenie **repo**.
+  3.  **Generate token** → token **skopírovať a uložiť** (zobrazí sa iba raz).
+  4.  Pri prvom `git push` zadať token namiesto hesla; správca poverení (credential manager) si ho zapamätá.
+- Pohodlná alternatíva priamo z R — balík `gitcreds`:
+
+```{r}
+#| label: bonus-gitcreds
+#| eval: false
+install.packages("gitcreds")
+gitcreds::gitcreds_set()          # interaktívne vloženie tokenu
+```
+
+- Pre pokročilejších: **SSH kľúč** (`ssh-keygen`; verejný kľúč vložiť do **Settings → SSH and GPG keys**).
+
+## B4 — Založenie repozitára na GitHub
+
+1.  Zelené tlačidlo **New** (alebo `+` vpravo hore → **New repository**).
+2.  **Repository name**: napr. `ds-projekt`.
+3.  **Private** (odporúčané pre školské súbory) alebo **Public**.
+4.  Zaškrtnúť **Add a README file**.
+5.  **Add .gitignore** → šablóna **R**.
+6.  **Create repository**.
+
+## B5 — Prepojenie s RStudiom
+
+**Spôsob A — klonovanie GitHub repozitára (odporúčaný pre začiatok):**
+
+1.  Stránka repozitára: **Code → HTTPS** → skopírovať URL.
+2.  RStudio: **File → New Project → Version Control → Git** → vložiť URL → zvoliť priečinok → **Create Project**.
+3.  Výsledok: lokálna kópia ako RStudio Project prepojená so vzdialeným repozitárom.
+
+**Spôsob B — existujúci lokálny projekt (ten z bloku 8) → nový GitHub repozitár:**
+
+```{bash}
+#| label: bonus-prepojenie-remote
+#| eval: false
+cd cesta/k/projektu
+git branch -M main                                        # premenovanie vetvy na main
+git remote add origin https://github.com/USER/REPO.git    # pripojenie vzdialeného repozitára
+git push -u origin main                                   # prvé nahratie histórie
+```
+
+**Vysvetlenie:** `git remote add origin <URL>` uloží adresu vzdialeného repozitára pod skratkou `origin`. Prepínač `-u` pri prvom pushi nastaví trvalé prepojenie lokálnej vetvy `main` s vetvou `main` na serveri — nasledujúce nahrávanie už stačí ako samotné `git push`.
+
+## B6 — Pracovný cyklus so vzdialeným repozitárom
+
+```{mermaid}
+flowchart LR
+    A[Pracovný priečinok] -->|git add| B[Staging area]
+    B -->|git commit| C[Lokálny repozitár]
+    C -->|git push| D[GitHub]
+    D -->|git pull| A
+```
+
+```{bash}
+#| label: bonus-cyklus-remote
+#| eval: false
+git status                        # čo sa zmenilo
+git add .                         # staging zmien
+git commit -m "add EDA script"    # commit s výstižnou správou
+git push                          # nahratie na GitHub
+git pull                          # stiahnutie zmien z GitHubu
+git log --oneline                 # stručná história
+```
+
+- V RStudiu tomu zodpovedajú tlačidlá **Push** a **Pull** v záložke **Git**.
+- Pravidlo: pred začiatkom práce vždy `git pull`, po dokončení kroku `git commit` + `git push`.
+
+## B7 — Riešenie konfliktov (základ)
+
+- Konflikt: rovnaký riadok bol zmenený na dvoch miestach nezávisle (dvaja ľudia v tíme; alebo dva počítače bez `git pull`).
+- Git označí sporné miesto priamo v súbore:
+
+```         
+  <<<<<<< HEAD
+  vaša lokálna verzia riadku
+  =======
+  verzia z GitHubu
+  >>>>>>> main
+```
+
+*V skutočnom súbore sú značky konfliktu **na začiatku riadku**; tu sú odsadené, aby RStudio nepovažovalo tento zošit za súbor v konflikte (Visual editor by sa inak neotvoril).*
+
+- Riešenie: ručne zlúčiť obe verzie, odstrániť značky `<<<<<<<`, `=======`, `>>>>>>>`, uložiť, potom `git add` + `git commit`.
+- Prevencia: pred prácou vždy `git pull`; commitovať menšie a častejšie celky.
+
+## B8 — Reprodukovateľnosť prostredia: `renv`
+
+::: {.callout-note title="POZNÁMKA — vzťah k Blok 8"}
+`renv` **nie je súčasť Gitu a Git ho nepotrebuje**. Git verzuje *vaše súbory*; `renv` zaznamenáva *verzie balíkov*, ktoré projekt používa. Sú to dva nezávislé nástroje, ktoré sa v praxi často kombinujú.
+:::
+
+::: {.callout-tip title="MINI-CASE"}
+Pošlete kolegovi kód, on ho spustí — a spadne, lebo má inú verziu balíka. `renv` tento problém odstraňuje: uzamkne presné verzie balíkov do súboru, ktorý priložíte ku kódu.
+:::
+
+## Prečo
+
+- Kód môže o pol roka (u kolegu, na inom počítači, po aktualizácii balíkov) **zlyhať alebo dávať iné výsledky**.
+- `renv` uzamkne presné verzie balíkov do súboru **`renv.lock`**.
+- Ktokoľvek vie prostredie **presne zrekonštruovať** — bežná požiadavka v praxi aj na zahraničných univerzitách.
+
+## Tri kľúčové funkcie
+
+```{r}
+#| label: bonus-renv-funkcie
+#| eval: false
+install.packages("renv")
+
+renv::init()       # 1. inicializácia v aktuálnom RStudio Projekte
+renv::snapshot()   # 2. zápis verzií balíkov do renv.lock
+renv::restore()    # 3. obnovenie prostredia podľa renv.lock
+```
+
+**Vysvetlenie:**
+
+- `renv::init()` vytvorí pre projekt **vlastnú knižnicu balíkov** — balíky nainštalované v projekte už neovplyvňujú iné projekty.
+- `renv::snapshot()` prejde kód projektu, zistí, ktoré balíky sa v ňom používajú, a zapíše ich názvy a verzie do `renv.lock`. Spúšťa sa po každej inštalácii nového balíka.
+- `renv::restore()` je opačný smer: podľa `renv.lock` doinštaluje presne tie verzie, ktoré autor použil.
+
+## Čo sa stane po `renv::init()`
+
+- Vznikne priečinok `renv/` (projektová knižnica + metadáta) a `.Rprofile` (automatická aktivácia projektu).
+- Vznikne **`renv.lock`** — textový súbor vo formáte JSON so zoznamom balíkov a presných verzií.
+- Ak projekt verzujete Gitom: commitovať `renv.lock`, `.Rprofile`, `renv/settings.json`, `renv/activate.R`; do `.gitignore` pridať `renv/library/` a `renv/staging/` (sú to stiahnuté balíky, tie sa neverzujú).
+
+::: {.callout-warning title="KONTROLA — concept check"}
+Kolega dostal váš projekt s `renv.lock` a `library(tidyverse)` mu zlyhá. Ktorý JEDEN príkaz mu poradíte?
+:::
+
+# Zdroje {.unnumbered}
+
+- [R for Data Science (2e)](https://r4ds.hadley.nz/)
+- [Happy Git and GitHub for the useR](https://happygitwithr.com/)
+- [renv — Introduction](https://rstudio.github.io/renv/articles/renv.html)
+- [Pro Git (voľne dostupná kniha)](https://git-scm.com/book/en/v2)
+- [GitHub Docs — Getting started](https://docs.github.com/en/get-started)

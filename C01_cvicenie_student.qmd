@@ -1,0 +1,559 @@
+---
+title: "Data Science v R — Cvičenie 1 (pracovný zošit)"
+subtitle: "Komplexný prípad: NábytokPlus s.r.o. — vyhodnotenie sezóny a plán na Q1"
+format:
+  html:
+    self-contained: true
+    number-sections: true
+    number-depth: 2
+    code-fold: false
+    code-tools: true
+    toc: true
+    toc-expand: true
+    theme: cosmo
+execute:
+  eval: true
+  echo: true
+  message: false
+  warning: false
+  error: true
+  cache: false
+editor: visual
+---
+
+::: {.callout-important title="AKO PRACOVAŤ S TÝMTO DOKUMENTOM"}
+- Cvičenie je **jeden súvislý prípad** rozdelený na časti A–F; poradie častí kopíruje prednášku 1.
+- Dokument je zároveň **pracovný zošit**: uložte si ho pod vlastným menom do svojho RStudio Projektu (napr. `nabytokplus_priezvisko.qmd`) a kód píšte **priamo do pripravených blokov** pod každou úlohou. V bloku je úloha opísaná komentárom a pod každou podúlohou je voľný riadok na váš kód. Alternatívne môžete pracovať v skripte `R/nabytokplus.R`.
+- **Spúšťanie v zošite:** `Ctrl+Enter` = aktuálny riadok, `Ctrl+Shift+Enter` = celý blok. Bloky spúšťajte **postupne zhora nadol** — neskoršie úlohy používajú objekty z predchádzajúcich (napr. `portfolio` z B1, `marza` z C1, stĺpec `obrat` z D1).
+- Slovné interpretácie píšte ako komentár (`#`) do bloku alebo ako bežný text pod blok. **Render** (`Ctrl+Shift+K`) vytvorí vaše HTML s kódom aj výsledkami; bloky s príkazmi Gitu sa pri renderi nespúšťajú — tie zadávate v záložke **Terminal**.
+- Všetky dáta sú napísané priamo v dokumente — nič sa nesťahuje ani neimportuje. Pracujeme **výlučne v base R**.
+- Pri každej úlohe sa okrem kódu vyžaduje aj **slovná interpretácia**: čo z výsledku vyplýva pre firmu.
+- Časť F si vyžaduje nainštalovaný Git (prednáška 1, Blok 8).
+:::
+
+# Zadanie prípadu
+
+**NábytokPlus s.r.o.** je slovenský e-shop s bytovým zariadením. Predáva v štyroch hlavných kategóriách, časť sortimentu drží na vlastnom sklade a časť posiela priamo od dodávateľa (dropshipping). Doručovanie zabezpečujú vlastní kuriéri.
+
+Sezóna Október – December práve skončila. Vedenie firmy pripravuje plán na Q1 a od vás ako dátového analytika žiada odpovede na päť otázok:
+
+1.  **Ktorý predikčný nástroj dopytu používať ďalej** a koľko kuriérov objednať na najbližší týždeň?
+2.  **Ktoré kategórie sú rizikové** z hľadiska vrátenia tovaru a ktoré držíme zbytočne na dvoch miestach naraz?
+3.  **Ktorá kategória a ktorý mesiac** priniesli najvyššiu maržu a aký efekt má euro vložené do reklamy?
+4.  **Ktoré mestá** ťahajú obrat a čo robiť s chýbajúcimi údajmi o nákladoch na dopravu?
+5.  **Ktoré produkty** patria do zimnej kampane?
+
+Šiesta úloha je organizačná: celú analýzu budete **verzovať Gitom**, aby sa dalo vrátiť ku ktorejkoľvek medziverzii.
+
+::: {.callout-note title="CIEĽ cvičenia"}
+Po cvičení viete: (1) pracovať s vektormi vrátane coercion a vyhodnotiť presnosť predikcie, (2) použiť logické a množinové operácie na segmentáciu sortimentu, (3) počítať s maticami vrátane odhadu OLS, (4) filtrovať data frame a korektne ošetriť NA, (5) zoraďovať a prideľovať poradie, (6) verzovať vlastný skript v lokálnom Git repozitári.
+:::
+
+# Časť A — Dopyt, presnosť predikcie a kapacita kuriérov
+
+::: {.callout-note title="Dáta pre časť A"}
+Denné počty objednávok za posledný týždeň sezóny (pondelok – nedeľa) a dve predikcie od dvoch dodávateľov softvéru.
+:::
+
+```{r}
+#| label: data-cast-a
+objednavky   <- c(92, 101, 96, 118, 143, 158, 108)   # skutočnosť
+predikcia_A  <- c(95,  99, 100, 112, 138, 150, 112)  # nástroj A
+predikcia_B  <- c(88, 105,  92, 125, 132, 165, 102)  # nástroj B
+dni <- c("Po", "Ut", "St", "Št", "Pi", "So", "Ne")
+```
+
+## ÚLOHA A1 — triedy a coercion
+
+::: {.callout-tip title="ÚLOHA A1"}
+a)  Zistite triedu vektora `objednavky` a jeho dĺžku.
+b)  Pomenujte prvky vektora `objednavky` skratkami dní.
+c)  Kolega zapísal údaje o jednej objednávke ako `c(TRUE, 158, "Bratislava")`. Akú triedu bude mať výsledok a prečo? Overte v R a vysvetlite dôsledok pre ďalší výpočet.
+:::
+
+```{r}
+#| label: zosit-a1
+# ---- ÚLOHA A1 ----
+# a) Zistite triedu vektora `objednavky` a jeho dĺžku.
+class(objednavky)
+typeof(objednavky)
+
+length(objednavky)
+
+# b) Pomenujte prvky vektora `objednavky` skratkami dní (vektor `dni`).
+names(objednavky) <- dni
+
+# c) Aká bude trieda c(TRUE, 158, "Bratislava") a prečo? Overte v R;
+#    dôsledok pre ďalší výpočet napíšte ako komentár.
+
+test <- c(TRUE, 158, "Bratislava")
+class(test)
+
+test2 <- list(test)
+typeof(test2)
+
+?list
+```
+
+## ÚLOHA A2 — ktorý predikčný nástroj je lepší
+
+::: {.callout-tip title="ÚLOHA A2"}
+a)  Pre oba nástroje vypočítajte chyby predikcie (predikcia − skutočnosť).
+b)  Vypočítajte **MAE** (priemerná absolútna chyba) a **RMSE** (odmocnina z priemernej štvorcovej chyby) pre oba nástroje.
+c)  Ktorý nástroj odporučíte a prečo sa MAE a RMSE môžu líšiť v tom, ktorý nástroj „potrestajú" viac?
+:::
+
+```{r}
+#| label: zosit-a2
+# ---- ÚLOHA A2 ----
+# a) Chyby predikcie pre oba nástroje (predikcia − skutočnosť).
+chyba_A <- predikcia_A-objednavky
+chyba_B <- predikcia_B-objednavky
+# b) MAE a RMSE pre nástroj A aj B.
+
+mae_a <- mean(abs(chyba_A))
+rmse_a <- sqrt(mean(chyba_A^2))
+mae_b <- mean(abs(chyba_B))
+rmse_b <- sqrt(mean(chyba_B^2))
+
+# c) Ktorý nástroj odporučíte? Prečo môžu MAE a RMSE „trestať“ nástroje rozdielne? (komentár)
+
+mae_a
+mae_b
+rmse_a
+rmse_b
+```
+
+## ÚLOHA A3 — koľko kuriérov
+
+::: {.callout-tip title="ÚLOHA A3"}
+Jeden kuriér zvládne **45 objednávok denne**.
+
+a)  Koľko kuriérov stačí na **priemerný** deň a koľko na **špičkový** deň?
+b)  Ktorý z týchto dvoch počtov odporučíte vedeniu a aké riziko nesie to druhé rozhodnutie?
+
+Použite `ceiling()` (zaokrúhlenie nahor) — kuriér sa nedá objednať na polovicu.
+:::
+
+```{r}
+#| label: zosit-a3
+# ---- ÚLOHA A3 ----
+# Kapacita: 1 kuriér = 45 objednávok denne; použite ceiling().
+# a) Počet kuriérov na priemerný a na špičkový deň.
+kapacita <- 45
+kurieri_premier <- ceiling(mean(objednavky)/kapacita)
+kurieri_premier
+
+kurieri_spicka <- ceiling(max(objednavky)/kapacita)
+kurieri_spicka
+
+# b) Ktorý počet odporučíte vedeniu a aké riziko nesie druhé rozhodnutie? (komentár)
+
+
+```
+
+# Časť B — Segmentácia sortimentu (logické a množinové operácie)
+
+::: {.callout-note title="Dáta pre časť B"}
+```{r}
+#| label: data-cast-b
+vlastny_sklad <- c("Sedačky", "Stoličky", "Svietidlá", "Koberce", "Matrace")
+dropshipping  <- c("Svietidlá", "Koberce", "Dekorácie", "Záclony")
+vysoka_vratkovost <- c("Matrace", "Koberce", "Záclony")   # miera vrátenia nad 20 %
+```
+:::
+
+## ÚLOHA B1 — prieniky a rozdiely
+
+::: {.callout-tip title="ÚLOHA B1"}
+a)  Ktoré kategórie držíme **súčasne** na vlastnom sklade aj v dropshippingu?
+b)  Ktoré kategórie sú **len** na vlastnom sklade a ktoré **len** v dropshippingu?
+c)  Zostavte **celé portfólio** kategórií, ktoré e-shop ponúka, a zistite jeho veľkosť.
+:::
+
+```{r}
+#| label: zosit-b1
+# ---- ÚLOHA B1 ----
+# a) Kategórie súčasne na vlastnom sklade aj v dropshippingu.
+intersect(vlastny_sklad, dropshipping)
+
+# b) Kategórie len na vlastnom sklade; len v dropshippingu.
+setdiff(vlastny_sklad, dropshipping)
+setdiff(dropshipping, vlastny_sklad)
+# c) Celé portfólio kategórií a jeho veľkosť.
+portfolio <- union(vlastny_sklad, dropshipping)
+
+length(portfolio)
+```
+
+## ÚLOHA B2 — rizikové kategórie
+
+::: {.callout-tip title="ÚLOHA B2"}
+a)  Pomocou `%in%` vytvorte logický vektor, ktorý pre každú kategóriu portfólia hovorí, či má **vysokú vrátkovosť**.
+b)  Koľko takých kategórií je a ktoré to sú?
+c)  Ktoré rizikové kategórie máme na **vlastnom sklade** (tam nás vrátenie bolí najviac, lebo tovar zaberá miesto)?
+:::
+
+```{r}
+#| label: zosit-b2
+# ---- ÚLOHA B2 ----
+# a) Logický vektor (%in%): má kategória portfólia vysokú vrátkovosť?
+rizikove <- portfolio %in% vysoka_vratkovost
+rizikove
+# b) Koľko takých kategórií je a ktoré to sú?
+sum(rizikove)# pocita 1. ked lenght tak pocita aj true aj false
+portfolio[rizikove]
+
+# c) Ktoré rizikové kategórie máme na vlastnom sklade?
+class(rizikove)
+class(portfolio)
+
+intersect(vlastny_sklad, vysoka_vratkovost)
+vlastny_sklad %in% vysoka_vratkovost
+```
+
+## ÚLOHA B3 — príznaky v tabuľke
+
+::: {.callout-tip title="ÚLOHA B3"}
+Zostavte data frame `kategorie` so stĺpcami: názov kategórie, príznak vlastného skladu, príznak dropshippingu a príznak vysokej vrátkovosti. Vypíšte iba kategórie, ktoré sú rizikové **a zároveň** na vlastnom sklade.
+:::
+
+```{r}
+#| label: zosit-b3
+# ---- ÚLOHA B3 ----
+# Data frame `kategorie`: názov, príznak skladu, dropshippingu, vysokej vrátkovosti.
+# Vypíšte kategórie rizikové a zároveň na vlastnom sklade.
+
+kategorie <-  data.frame(
+  kategorie = portfolio,
+  interny_skald= portfolio %in% vlastny_sklad,
+  externy_sklad= portfolio %in% dropshipping,
+  rizikove_tovar= portfolio %in% vysoka_vratkovost
+)
+kategorie
+
+```
+
+# Časť C — Tržby, marže a efekt reklamy (matice a OLS)
+
+::: {.callout-note title="Dáta pre časť C"}
+Tržby a náklady na obstaranie tovaru (COGS) v EUR, štyri kategórie × tri mesiace sezóny.
+
+```{r}
+#| label: data-cast-c
+kat <- c("Sedacky", "Stolicky", "Svietidla", "Koberce")
+mes <- c("Okt", "Nov", "Dec")
+
+trzby <- matrix(c(42000, 51000, 68000,
+                  18000, 21000, 27000,
+                   9000, 12000, 19000,
+                  15000, 14000, 22000),
+                nrow = 4, byrow = TRUE,
+                dimnames = list(kat, mes))
+
+naklady <- matrix(c(29000, 35000, 45000,
+                    12500, 14500, 18000,
+                     5800,  7600, 11500,
+                    10500,  9800, 15000),
+                  nrow = 4, byrow = TRUE,
+                  dimnames = list(kat, mes))
+trzby
+```
+:::
+
+## ÚLOHA C1 — hrubá marža po prvkoch
+
+::: {.callout-tip title="ÚLOHA C1"}
+a)  Vypočítajte maticu hrubej marže v EUR (tržby − náklady).
+b)  Vypočítajte maticu marže v **percentách** tržieb, zaokrúhlenú na 1 desatinné miesto.
+c)  Ktorá kombinácia kategórie a mesiaca má najvyššiu percentuálnu maržu?
+:::
+
+```{r}
+#| label: zosit-c1
+# ---- ÚLOHA C1 ----
+# a) Matica hrubej marže v EUR (tržby − náklady).
+mrza<- trzby-naklady
+mrza
+# b) Matica marže v % tržieb, zaokrúhlená na 1 desatinné miesto.
+marza_percent <- round(mrza/ trzby* 100, 1)
+marza_percent
+# c) Kombinácia kategórie a mesiaca s najvyššou percentuálnou maržou.
+
+
+which (marza_percent== max(marza_percent[]), arr.ind =TRUE)
+```
+
+## ÚLOHA C2 — súčty podľa kategórií a mesiacov
+
+::: {.callout-tip title="ÚLOHA C2"}
+a)  Vypočítajte celkové tržby a celkovú maržu **za každú kategóriu** (súčet cez mesiace).
+b)  Vypočítajte celkové tržby **za každý mesiac** (súčet cez kategórie).
+c)  Zostavte prehľadnú tabuľku kategórií: tržby, marža, marža v % — a zoraďte ju podľa marže v EUR zostupne.
+
+Použite `rowSums()` a `colSums()`.
+:::
+
+```{r}
+#| label: zosit-c2
+# ---- ÚLOHA C2 ----
+# Použite rowSums() a colSums().
+# a) Celkové tržby a celková marža za každú kategóriu.
+trzby_categorie <- rowSums(trzby)
+mrza_categorie <- rowSums(mrza)
+# b) Celkové tržby za každý mesiac.
+trzby_mesiac <- colSums(trzby)
+colSums(mrza)
+# c) Tabuľka kategórií (tržby, marža, marža v %) zoradená podľa marže v EUR zostupnefinanc.
+finance <-  data.frame(
+  kategorie=kat,
+  trzby= trzby_categorie,
+  mrza= mrza_categorie,
+  mrza_percent=marza_percent
+)
+finance
+```
+
+## ÚLOHA C3 — efekt reklamy (odhad OLS maticovo)
+
+::: {.callout-tip title="ÚLOHA C3"}
+Za posledných šesť mesiacov (Júl – December) máme výdavky na online reklamu a celkové mesačné tržby. Odhadnite model $y = \beta_0 + \beta_1 x + \varepsilon$ **maticovo**, vzorcom $$\hat{\beta} = (X^{\top}X)^{-1} X^{\top} y$$
+
+a)  Zostavte maticu `X` s jednotkovým stĺpcom a stĺpcom reklamy.
+b)  Odhadnite koeficienty.
+c)  Interpretujte $\beta_1$ v eurách a odhadnite tržby pri rozpočte 9 000 EUR.
+d)  Vypočítajte rezíduá a posúďte, či je odhad dôveryhodný.
+:::
+
+```{r}
+#| label: data-cast-c3
+reklama <- c(2500, 3200, 3800, 4200, 5100, 8000)            # EUR mesačne
+trzby_m <- c(61000, 72000, 79000, 84000, 98000, 136000)     # EUR mesačne
+```
+
+```{r}
+#| label: zosit-c3
+# ---- ÚLOHA C3 ----
+# Model y = b0 + b1*x odhadnite maticovo: beta = (X'X)^(-1) X'y
+# a) Matica X s jednotkovým stĺpcom a stĺpcom reklamy.
+
+# b) Odhad koeficientov.
+
+# c) Interpretácia b1 v eurách; odhad tržieb pri rozpočte 9 000 EUR.
+
+# d) Rezíduá a posúdenie dôveryhodnosti odhadu (komentár).
+
+```
+
+# Časť D — Regionálny výkon (data frame, podmnožiny, NA)
+
+::: {.callout-note title="Dáta pre časť D"}
+Prehľad ôsmich miest za december. V nákladoch na dopravu **chýbajú dve hodnoty** — externý dopravca ich ešte nevyfakturoval.
+
+```{r}
+#| label: data-cast-d
+mesta <- data.frame(
+  mesto            = c("Bratislava", "Kosice", "Zilina", "Nitra",
+                       "Presov", "Trnava", "Banska Bystrica", "Trencin"),
+  objednavky       = c(120, 86, 145, 98, 132, 77, 110, 95),
+  priem_hodnota    = c(310, 275, 420, 180, 350, 240, 295, 205),   # EUR
+  naklady_dopravy  = c(2400, 1850, NA, 1600, 2750, NA, 2100, 1700),
+  reklamacie       = c(6, 3, 9, 8, 5, 2, 4, 7)
+)
+mesta
+```
+:::
+
+## ÚLOHA D1 — obrat a základné filtrovanie
+
+::: {.callout-tip title="ÚLOHA D1"}
+a)  Pridajte stĺpec `obrat` (objednávky × priemerná hodnota objednávky).
+b)  Vypíšte mestá s **nadpriemerným počtom objednávok** — len stĺpce mesto, objednávky a obrat.
+c)  Rovnakú informáciu získajte troma spôsobmi výberu stĺpca (`$`, `[[`, `[`) a vysvetlite rozdiel medzi nimi.
+:::
+
+```{r}
+#| label: zosit-d1
+# ---- ÚLOHA D1 ----
+# a) Nový stĺpec `obrat` (objednávky × priemerná hodnota objednávky).
+
+# b) Mestá s nadpriemerným počtom objednávok — stĺpce mesto, objednavky, obrat.
+
+# c) Stĺpec `obrat` tromi spôsobmi ($, [[, [) a rozdiel medzi nimi (komentár).
+
+```
+
+## ÚLOHA D2 — chýbajúce hodnoty
+
+::: {.callout-tip title="ÚLOHA D2"}
+a)  Zistite, v ktorých mestách chýbajú náklady na dopravu a koľko ich je.
+b)  Vypočítajte priemerné náklady na dopravu (i) naivne a (ii) s vynechaním NA.
+c)  Vytvorte tabuľku bez riadkov s NA a porovnajte priemerný obrat pred a po vynechaní.
+d)  Ktorý postup je pre report vedeniu korektnejší a čo treba vždy uviesť?
+:::
+
+```{r}
+#| label: zosit-d2
+# ---- ÚLOHA D2 ----
+# a) V ktorých mestách chýbajú náklady na dopravu a koľko ich je?
+
+# b) Priemerné náklady na dopravu (i) naivne, (ii) s vynechaním NA.
+
+# c) Tabuľka bez riadkov s NA; priemerný obrat pred a po vynechaní.
+
+# d) Ktorý postup je pre report korektnejší a čo treba vždy uviesť? (komentár)
+
+```
+
+## ÚLOHA D3 — miera reklamácií
+
+::: {.callout-tip title="ÚLOHA D3"}
+a)  Pridajte stĺpec `reklamacie_pct` — podiel reklamácií na objednávkach v %, zaokrúhlený na 1 desatinné miesto.
+b)  Vypíšte mestá, kde je miera reklamácií nad 6 % **a zároveň** obrat nad 20 000 EUR. Prečo je práve táto kombinácia pre firmu najnepríjemnejšia?
+:::
+
+```{r}
+#| label: zosit-d3
+# ---- ÚLOHA D3 ----
+# a) Nový stĺpec `reklamacie_pct` — podiel reklamácií na objednávkach v %, 1 des. miesto.
+
+# b) Mestá s mierou reklamácií nad 6 % a zároveň obratom nad 20 000 EUR.
+#    Prečo je táto kombinácia najnepríjemnejšia? (komentár)
+
+```
+
+# Časť E — Zimná kampaň (zoraďovanie a poradie)
+
+::: {.callout-note title="Dáta pre časť E"}
+```{r}
+#| label: data-cast-e
+produkty <- data.frame(
+  produkt   = c("Sedacka Bergen", "Stolicka Nordic", "Svietidlo Lumo",
+                "Koberec Atlas", "Matrac Dream", "Zaclona Vela"),
+  obrat     = c(68000, 27000, 19000, 22000, 31000, 9000),   # EUR za sezónu
+  marza_pct = c(34.1, 28.4, 41.2, 25.6, 22.8, 45.0),
+  sklad_ks  = c(12, 140, 86, 45, 30, 210)
+)
+produkty
+```
+:::
+
+## ÚLOHA E1 — rebríčky
+
+::: {.callout-tip title="ÚLOHA E1"}
+a)  Zoraďte produkty podľa obratu zostupne a vypíšte TOP 3.
+b)  Nájdite produkt s najvyššou a najnižšou percentuálnou maržou (indexy aj názvy).
+c)  Pridajte stĺpec `poradie_marza` — poradie podľa marže od najvyššej (najvyššia = 1), zhody riešte metódou `"min"`.
+:::
+
+```{r}
+#| label: zosit-e1
+# ---- ÚLOHA E1 ----
+# a) Produkty zoradené podľa obratu zostupne — TOP 3.
+
+# b) Produkt s najvyššou a najnižšou percentuálnou maržou (indexy aj názvy).
+
+# c) Stĺpec `poradie_marza` (najvyššia marža = 1), ties.method = "min".
+
+```
+
+## ÚLOHA E2 — výber do kampane a syntéza
+
+::: {.callout-tip title="ÚLOHA E2"}
+Do zimnej kampane vyberte produkty, ktoré majú **maržu nad 30 %** a **aspoň 40 kusov na sklade** (kampaň nemá zmysel, ak tovar po dvoch dňoch dôjde).
+
+a)  Vypíšte vybrané produkty zoradené podľa marže zostupne.
+b)  Napíšte 3–5 viet zhrnutia pre vedenie firmy, ktoré spojí závery zo všetkých častí: nástroj predikcie, počet kuriérov, riziková kategória, ťahúň marže, efekt reklamy a mesto na previerku.
+:::
+
+```{r}
+#| label: zosit-e2
+# ---- ÚLOHA E2 ----
+# Výber do kampane: marža nad 30 % a aspoň 40 ks na sklade.
+# a) Vybrané produkty zoradené podľa marže zostupne.
+
+# b) Zhrnutie pre vedenie (3–5 viet) napíšte do textu pod týmto blokom.
+
+```
+
+# Časť F — Verzovanie výsledkov (lokálny Git)
+
+::: {.callout-note title="CIEĽ časti F"}
+Celú dnešnú prácu uložiť do lokálneho repozitára tak, aby sa dalo vrátiť ku ktorejkoľvek medziverzii. Žiadne konto ani internet nie sú potrebné.
+:::
+
+## ÚLOHA F1 — repozitár a prvý commit
+
+::: {.callout-tip title="ÚLOHA F1"}
+a)  Vo svojom RStudio Projekte založte repozitár (`git init` alebo zaškrtnutie pri tvorbe projektu) a overte stav.
+b)  Vytvorte `.gitignore` s vylúčením `.Rhistory`, `.RData`, `.Rproj.user/` a vyrenderovaných `*.html`.
+c)  Commitnite skript `R/nabytokplus.R` so správou `cvicenie 1 — casti A a B`.
+:::
+
+```{bash}
+#| label: zosit-f1
+#| eval: false
+# ---- ÚLOHA F1 ----
+# a) Založte repozitár a overte stav.
+
+# b) Vytvorte .gitignore (.Rhistory, .RData, .Rproj.user/, *.html).
+
+# c) Commitnite svoj skript/zošit so správou "cvicenie 1 - casti A a B".
+
+```
+
+## ÚLOHA F2 — priebežné commity a história
+
+::: {.callout-tip title="ÚLOHA F2"}
+a)  Doplňte do skriptu časť C a urobte druhý commit so správou `doplnena cast C - matice a OLS`.
+b)  Doplňte časti D a E a urobte tretí commit.
+c)  Vypíšte históriu a zistite hash **druhého** commitu.
+d)  Pozrite si, čo presne obsahoval druhý commit.
+:::
+
+```{bash}
+#| label: zosit-f2
+#| eval: false
+# ---- ÚLOHA F2 ----
+# a) Druhý commit po časti C: "doplnena cast C - matice a OLS".
+
+# b) Tretí commit po častiach D a E.
+
+# c) História commitov a hash druhého commitu.
+
+# d) Obsah druhého commitu.
+
+```
+
+## ÚLOHA F3 — návrat k staršej verzii
+
+::: {.callout-tip title="ÚLOHA F3"}
+a)  Zámerne „pokazte" skript (vymažte časť C a uložte) a pozrite sa, čo hlási `git status` a `git diff`.
+b)  Vráťte súbor do stavu posledného commitu.
+c)  Načítajte do pracovného priečinka verziu skriptu z **druhého** commitu a vysvetlite, ako sa tento krok líši od bodu b).
+:::
+
+```{bash}
+#| label: zosit-f3
+#| eval: false
+# ---- ÚLOHA F3 ----
+# a) Po „pokazení“ súboru: čo hlási git status a git diff?
+
+# b) Návrat súboru do stavu posledného commitu.
+
+# c) Verzia súboru z druhého commitu (rozdiel oproti b) napíšte do komentára).
+
+```
+
+# Zhrnutie cvičenia
+
+- Časť A: vektory, coercion, MAE a RMSE, plánovanie kapacity podľa špičky, nie podľa priemeru.
+- Časť B: množinové operácie a `%in%` ako nástroj segmentácie sortimentu.
+- Časť C: aritmetika matíc po prvkoch, `rowSums()` a `colSums()`, odhad OLS maticovo a jeho interpretácia vrátane hraníc (korelácia, extrapolácia).
+- Časť D: data frame, tri operátory výberu, dokumentované ošetrenie NA a jeho vplyv na závery.
+- Časť E: `order()`, `rank()`, `which.max()` a preklad rebríčkov do obchodného rozhodnutia.
+- Časť F: lokálny Git — repozitár, `.gitignore`, priebežné commity, história a návrat k staršej verzii.
+
+::: {.callout-tip title="PRAX — domáce rozšírenie (nepovinné)"}
+Doplňte do skriptu výpočet **priemernej hodnoty objednávky** za každé mesto a zistite, či mestá s vyššou priemernou hodnotou objednávky majú aj vyššiu mieru reklamácií. Výsledok commitnite so správou `domace rozsirenie`.
+:::
