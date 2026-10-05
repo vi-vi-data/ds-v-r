@@ -489,8 +489,7 @@ Tri príkazy, ktorými sa začína **každá** práca s novými dátami — skô
 
 ```{r}
 #| label: inspekcia-str
-str(osoba)              # zoznam: 3 komponenty a ich triedy
-___                                     # tabuľka: 153 riadkov, 6 stĺpcov
+str(osoba)              # zoznam: 3 komponenty a ich triedy                                 # tabuľka: 153 riadkov, 6 stĺpcov   
 ```
 
 **Funkcia 2 — `head(x, n)`** vypíše prvých `n` riadkov (predvolene 6), `tail(x, n)` posledných. Explicitné `n` sa píše vtedy, keď chcete výpis udržať krátky. Veľkú tabuľku **nikdy nevypisujeme celú** — `head()` stačí na kontrolu, že dáta vyzerajú tak, ako čakáme.
@@ -841,7 +840,7 @@ Ukážka pracuje s identifikátormi zákazníkov, ktorí nakúpili v januári a 
 - `union(a, b)` — **zjednotenie**: všetky hodnoty, ktoré sú v `a` **alebo** v `b` (každá raz). *Koľko rôznych zákazníkov sme mali za dva mesiace?*
 - `intersect(a, b)` — **prienik**: hodnoty, ktoré sú v `a` **aj** v `b`. *Ktorí zákazníci sa vrátili?*
 - `setdiff(a, b)` — **rozdiel**: hodnoty, ktoré sú v `a`, ale **nie** v `b`. Záleží na poradí: `setdiff(jan, feb)` sú zákazníci, ktorých sme stratili, `setdiff(feb, jan)` noví zákazníci.
-- `setequal(a, b)` — sú obe množiny rovnaké (bez ohľadu na poradie a opakovanie)?
+- — sú obe množiny rovnaké (bez ohľadu na poradie a opakovanie)?
 - `a %in% b` (alebo `is.element(a, b)`) — pre **každý prvok** `a` odpovie `TRUE`/`FALSE`, či sa nachádza v `b`. Výsledok má dĺžku `a`, preto sa dá použiť ako filter alebo príznak.
 
 ```{r}

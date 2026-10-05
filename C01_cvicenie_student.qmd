@@ -335,13 +335,28 @@ trzby_m <- c(61000, 72000, 79000, 84000, 98000, 136000)     # EUR mesačne
 #| label: zosit-c3
 # ---- ÚLOHA C3 ----
 # Model y = b0 + b1*x odhadnite maticovo: beta = (X'X)^(-1) X'y
+
 # a) Matica X s jednotkovým stĺpcom a stĺpcom reklamy.
+X <- cbind(1, reklama)
+y <- trzby_m
+X
 
 # b) Odhad koeficientov.
+XtX  <- t(X) %*% X # t(x) transponovana matica
+Xty  <- t(X) %*% y
+beta <- solve(XtX) %*% Xty
+beta
+
+# kontrola: coef(lm(trzby_m ~ reklama))
 
 # c) Interpretácia b1 v eurách; odhad tržieb pri rozpočte 9 000 EUR.
-
+predikcia_9000=beta[1]+beta[2]*9000
+predikcia_9000
+predickia_2500=beta[1]+beta[2]*2500
 # d) Rezíduá a posúdenie dôveryhodnosti odhadu (komentár).
+residuals <-  y- X %*%beta
+residuals
+#vzhladom na to ze residuals sa pohybuje v stovkah a predikovane hodnoty v 10tkach tisic. taj konstantujeme ze odhady dostatocne presny
 
 ```
 
@@ -376,11 +391,16 @@ c)  Rovnakú informáciu získajte troma spôsobmi výberu stĺpca (`$`, `[[`, `
 #| label: zosit-d1
 # ---- ÚLOHA D1 ----
 # a) Nový stĺpec `obrat` (objednávky × priemerná hodnota objednávky).
+mesta$obrat <- mesta$objednavky*mesta$priem_hodnota
+mesta$obrat
 
 # b) Mestá s nadpriemerným počtom objednávok — stĺpce mesto, objednavky, obrat.
+mesta[mesta$objednavky>mean(mesta$objednavky), c('mesto', 'objednavky', 'obrat')]
 
 # c) Stĺpec `obrat` tromi spôsobmi ($, [[, [) a rozdiel medzi nimi (komentár).
-
+print(class(mesta$obrat))
+print(class(mesta[['obrat']]))
+print(class(mesta['obrat']))
 ```
 
 ## ÚLOHA D2 — chýbajúce hodnoty
@@ -396,12 +416,22 @@ d)  Ktorý postup je pre report vedeniu korektnejší a čo treba vždy uviesť?
 #| label: zosit-d2
 # ---- ÚLOHA D2 ----
 # a) V ktorých mestách chýbajú náklady na dopravu a koľko ich je?
+#is.na(mesta)
 
+mesta[is.na(mesta$naklady_dopravy),]
+mesta[is.na(mesta$naklady_dopravy), 'mesto']
+length(mesta[is.na(mesta$naklady_dopravy), 'mesto'])
 # b) Priemerné náklady na dopravu (i) naivne, (ii) s vynechaním NA.
+mean(mesta$naklady_dopravy, na.rm=TRUE)
 
 # c) Tabuľka bez riadkov s NA; priemerný obrat pred a po vynechaní.
+mesta_bezNA <- na.omit(mesta)
+mesta_bezNA
 
+mean(mesta$obrat)
+mean(mesta_bezNA$obrat)
 # d) Ktorý postup je pre report korektnejší a čo treba vždy uviesť? (komentár)
+#lepsie bolo pracovat zo vsetkymi udajami, a ak sa rozhodneme ich upravovat je potrebne uviest aky boli data osetrene
 
 ```
 
@@ -417,8 +447,12 @@ b)  Vypíšte mestá, kde je miera reklamácií nad 6 % **a zároveň** obrat na
 # ---- ÚLOHA D3 ----
 # a) Nový stĺpec `reklamacie_pct` — podiel reklamácií na objednávkach v %, 1 des. miesto.
 
+mesta$reklamacie_pct= round((mesta$reklamacie/mesta$objednavky)*100, 1)
+mesta
 # b) Mestá s mierou reklamácií nad 6 % a zároveň obratom nad 20 000 EUR.
 #    Prečo je táto kombinácia najnepríjemnejšia? (komentár)
+
+mesta[mesta$reklamacie_pct>6 & mesta$obrat>20000, ]
 
 ```
 
@@ -450,11 +484,16 @@ c)  Pridajte stĺpec `poradie_marza` — poradie podľa marže od najvyššej (n
 #| label: zosit-e1
 # ---- ÚLOHA E1 ----
 # a) Produkty zoradené podľa obratu zostupne — TOP 3.
-
+top_obrat <- head(produkty[order(produkty$obrat, decreasing=TRUE),], 3)
+top_obrat
 # b) Produkt s najvyššou a najnižšou percentuálnou maržou (indexy aj názvy).
+i_max <- which.max(produkty$marza_pct)
+i_min <- which.min(produkty$marza_pct)
 
+produkty$produkt[c(i_max, i_min)]
 # c) Stĺpec `poradie_marza` (najvyššia marža = 1), ties.method = "min".
-
+produkty$poradie_marza <- rank(-produkty$marza_pct, ties.method = "min")
+produkty[order(produkty$poradie_marza), c('produkt','poradie_marza','marza_pct')]
 ```
 
 ## ÚLOHA E2 — výber do kampane a syntéza
@@ -471,7 +510,8 @@ b)  Napíšte 3–5 viet zhrnutia pre vedenie firmy, ktoré spojí závery zo v�
 # ---- ÚLOHA E2 ----
 # Výber do kampane: marža nad 30 % a aspoň 40 ks na sklade.
 # a) Vybrané produkty zoradené podľa marže zostupne.
-
+vyber_k <- produkty[produkty$marza_pct>30 & produkty$sklad_ks>40, ]
+vyber_k[order(vyber_k$marza_pct, decreasing=TRUE), ]
 # b) Zhrnutie pre vedenie (3–5 viet) napíšte do textu pod týmto blokom.
 
 ```
